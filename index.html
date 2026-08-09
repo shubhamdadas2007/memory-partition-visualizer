@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Main Memory Contiguous Partitioning & Fragmentation Visualizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+  <!-- Top Navigation & Header -->
+  <header class="app-header">
+    <div class="logo-area">
+      <div class="cpu-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="4" y="4" width="16" height="16" rx="2" />
+          <rect x="9" y="9" width="6" height="6" />
+          <path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3" />
+        </svg>
+      </div>
+      <div>
+        <h1>MEMMAP <span class="badge">OS LAB</span></h1>
+        <p class="subtitle">Main Memory Contiguous Partition Allocation & Fragmentation Visualizer</p>
+      </div>
+    </div>
+
+    <div class="view-toggles">
+      <button id="singleViewBtn" class="btn-toggle active" data-view="single">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+        Single Map View
+      </button>
+      <button id="compareViewBtn" class="btn-toggle" data-view="compare">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="18" rx="1"/><rect x="13" y="3" width="8" height="18" rx="1"/></svg>
+        4-Algorithm Comparison
+      </button>
+    </div>
+  </header>
+
+  <!-- Live Stats Dashboard -->
+  <section class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-label">Total RAM</div>
+      <div class="stat-value" id="statTotalRam">1024 KB</div>
+      <div class="stat-sub" id="statAddressRange">0x0000 - 0x0400</div>
+    </div>
+    <div class="stat-card accent-allocated">
+      <div class="stat-label">Allocated RAM</div>
+      <div class="stat-value" id="statAllocated">128 KB</div>
+      <div class="stat-sub" id="statAllocatedPct">12.5%</div>
+    </div>
+    <div class="stat-card accent-free">
+      <div class="stat-label">Free Space</div>
+      <div class="stat-value" id="statFree">896 KB</div>
+      <div class="stat-sub" id="statFreePct">87.5%</div>
+    </div>
+    <div class="stat-card accent-internal">
+      <div class="stat-label">Internal Frag</div>
+      <div class="stat-value" id="statInternal">0 KB</div>
+      <div class="stat-sub" id="statInternalNote">Inside partitions</div>
+    </div>
+    <div class="stat-card accent-external">
+      <div class="stat-label">External Frag</div>
+      <div class="stat-value" id="statExternal">0 KB</div>
+      <div class="stat-sub" id="statExternalNote">Unusable free holes</div>
+    </div>
+    <div class="stat-card accent-efficiency">
+      <div class="stat-label">Memory Efficiency</div>
+      <div class="stat-value" id="statEfficiency">100%</div>
+      <div class="stat-sub" id="statSuccessCount">0 / 0 succeeded</div>
+    </div>
+  </section>
+
+  <!-- Main Grid Workspace -->
+  <main class="workspace-grid">
+    <!-- Sidebar Controls -->
+    <aside class="sidebar">
+      <!-- Section 1: Memory Scheme Config -->
+      <div class="card control-group">
+        <h3><span class="step-num">1</span> Memory Configuration</h3>
+        
+        <div class="form-row">
+          <label for="partitionScheme">Partition Scheme:</label>
+          <select id="partitionScheme" class="form-select">
+            <option value="dynamic" selected>Dynamic Partitioning (Variable)</option>
+            <option value="fixed-equal">Fixed Equal Partitions (8x128KB)</option>
+            <option value="fixed-unequal">Fixed Unequal Partitions (64, 128, 256, 448KB)</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="fitAlgorithm">Placement Algorithm:</label>
+          <select id="fitAlgorithm" class="form-select">
+            <option value="first">First Fit</option>
+            <option value="best">Best Fit</option>
+            <option value="worst">Worst Fit</option>
+            <option value="next">Next Fit (Rotational)</option>
+          </select>
+        </div>
+
+        <div class="form-row inline-row">
+          <button id="compactBtn" class="btn btn-warning" title="Compact free memory into one contiguous block">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"/></svg>
+            Compact Memory
+          </button>
+          <button id="resetBtn" class="btn btn-secondary">Reset Memory</button>
+        </div>
+      </div>
+
+      <!-- Section 2: Preset Scenarios -->
+      <div class="card control-group">
+        <h3><span class="step-num">2</span> Preset Workloads</h3>
+        <p class="help-text">Select a scenario to demonstrate specific OS memory phenomena:</p>
+        <div class="preset-buttons">
+          <button class="btn btn-preset" data-preset="internalFrag">
+            <span class="preset-name">Internal Frag Trap</span>
+            <span class="preset-desc">Fixed partitions wasted space</span>
+          </button>
+          <button class="btn btn-preset" data-preset="externalFrag">
+            <span class="preset-name">External Frag Hole Split</span>
+            <span class="preset-desc">Non-contiguous free gaps</span>
+          </button>
+          <button class="btn btn-preset" data-preset="bestVsWorst">
+            <span class="preset-name">Best vs Worst Fit</span>
+            <span class="preset-desc">Small residual hole creation</span>
+          </button>
+          <button class="btn btn-preset" data-preset="nextFitWalk">
+            <span class="preset-name">Next Fit Pointer Walk</span>
+            <span class="preset-desc">Rotational search position</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Section 3: Custom Process Allocator -->
+      <div class="card control-group">
+        <h3><span class="step-num">3</span> Allocate Process</h3>
+        <form id="addProcessForm" class="process-form">
+          <div class="form-row">
+            <label for="procName">Process Name:</label>
+            <input type="text" id="procName" class="form-input" placeholder="e.g. P1" value="P1" required>
+          </div>
+          <div class="form-row">
+            <label for="procSize">Process Size (KB):</label>
+            <input type="number" id="procSize" class="form-input" min="10" max="896" value="150" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Allocate Memory Block
+          </button>
+        </form>
+      </div>
+
+      <!-- Section 4: Simulation Controls -->
+      <div class="card control-group">
+        <h3><span class="step-num">4</span> Workload Stream Controls</h3>
+        <div class="sim-controls">
+          <button id="stepBtn" class="btn btn-outline" title="Process next queued item">Step</button>
+          <button id="playBtn" class="btn btn-success" title="Auto-run queue">Auto Play</button>
+          <button id="pauseBtn" class="btn btn-danger hidden" title="Pause simulation">Pause</button>
+        </div>
+        <div class="form-row speed-row">
+          <label for="speedSlider">Simulation Speed:</label>
+          <input type="range" id="speedSlider" min="200" max="2000" step="100" value="800">
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Visualization Area -->
+    <section class="visualization-area">
+      <!-- Single Map View Container -->
+      <div id="singleMapContainer" class="view-panel active">
+        <!-- Legend & Toolbar -->
+        <div class="map-legend">
+          <div class="legend-item"><span class="color-dot os-dot"></span> OS Reserved</div>
+          <div class="legend-item"><span class="color-dot allocated-dot"></span> Process Allocated</div>
+          <div class="legend-item"><span class="color-dot internal-dot"></span> Internal Fragmentation</div>
+          <div class="legend-item"><span class="color-dot external-dot"></span> External Frag Gap</div>
+          <div class="legend-item"><span class="color-dot free-dot"></span> Free Hole</div>
+          <div class="legend-item" id="pointerLegend" style="display:none;"><span class="color-dot pointer-dot"></span> Next Fit Pointer</div>
+        </div>
+
+        <!-- Main Visual Memory Bar -->
+        <div class="memory-map-wrapper">
+          <div class="memory-ruler" id="memoryRuler">
+            <!-- Address ticks generated dynamically -->
+          </div>
+
+          <div class="memory-track" id="memoryTrack">
+            <!-- Memory block elements rendered here dynamically -->
+          </div>
+        </div>
+
+        <!-- Detailed Memory Block Inspection Cards -->
+        <div class="block-details-grid" id="blockDetailsGrid">
+          <!-- Block summary cards rendered here -->
+        </div>
+
+        <!-- Step-by-Step Algorithm Decision Log -->
+        <div class="card log-card">
+          <div class="log-header">
+            <h4>Algorithm Decision Trace & Log</h4>
+            <button id="clearLogBtn" class="btn-xs">Clear Log</button>
+          </div>
+          <div class="log-content" id="logContent">
+            <div class="log-entry info">System initialized with 1024 KB Main Memory (128 KB OS reserved). Ready for allocation.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4-Algorithm Comparison View Container -->
+      <div id="compareMapContainer" class="view-panel hidden">
+        <div class="compare-header">
+          <h2>Simultaneous 4-Algorithm Benchmark</h2>
+          <p>Running First Fit, Best Fit, Worst Fit, and Next Fit concurrently on the exact same allocation queue.</p>
+        </div>
+
+        <div class="compare-grid">
+          <!-- First Fit Panel -->
+          <div class="compare-card" data-algo="first">
+            <div class="compare-card-header">
+              <h3>First Fit</h3>
+              <span class="compare-badge" id="badge-first">0/0 OK</span>
+            </div>
+            <div class="compare-metrics">
+              <div>Int Frag: <strong id="int-first">0 KB</strong></div>
+              <div>Ext Frag: <strong id="ext-first">0 KB</strong></div>
+              <div>Free: <strong id="free-first">896 KB</strong></div>
+            </div>
+            <div class="compare-track" id="track-first"></div>
+          </div>
+
+          <!-- Best Fit Panel -->
+          <div class="compare-card" data-algo="best">
+            <div class="compare-card-header">
+              <h3>Best Fit</h3>
+              <span class="compare-badge" id="badge-best">0/0 OK</span>
+            </div>
+            <div class="compare-metrics">
+              <div>Int Frag: <strong id="int-best">0 KB</strong></div>
+              <div>Ext Frag: <strong id="ext-best">0 KB</strong></div>
+              <div>Free: <strong id="free-best">896 KB</strong></div>
+            </div>
+            <div class="compare-track" id="track-best"></div>
+          </div>
+
+          <!-- Worst Fit Panel -->
+          <div class="compare-card" data-algo="worst">
+            <div class="compare-card-header">
+              <h3>Worst Fit</h3>
+              <span class="compare-badge" id="badge-worst">0/0 OK</span>
+            </div>
+            <div class="compare-metrics">
+              <div>Int Frag: <strong id="int-worst">0 KB</strong></div>
+              <div>Ext Frag: <strong id="ext-worst">0 KB</strong></div>
+              <div>Free: <strong id="free-worst">896 KB</strong></div>
+            </div>
+            <div class="compare-track" id="track-worst"></div>
+          </div>
+
+          <!-- Next Fit Panel -->
+          <div class="compare-card" data-algo="next">
+            <div class="compare-card-header">
+              <h3>Next Fit (Rotational)</h3>
+              <span class="compare-badge" id="badge-next">0/0 OK</span>
+            </div>
+            <div class="compare-metrics">
+              <div>Int Frag: <strong id="int-next">0 KB</strong></div>
+              <div>Ext Frag: <strong id="ext-next">0 KB</strong></div>
+              <div>Free: <strong id="free-next">896 KB</strong></div>
+            </div>
+            <div class="compare-track" id="track-next"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Interactive Memory Block Inspection Modal / Tooltip Overlay -->
+  <div id="blockModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalTitle">Memory Block Details</h3>
+        <button id="closeModalBtn" class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Content injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/memoryEngine.js"></script>
+  <script src="js/presets.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
