@@ -1,2086 +1,2021 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MEMMAP PRO // Operating Systems Main Memory & Fragmentation Laboratory Console</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MEMORYMAP PRO // Main Memory Allocation & Fragmentation Laboratory</title>
   <style>
-    /* ==========================================================================
-       MEMMAP PRO - Advanced OS Main Memory & Fragmentation Lab Styling
-       ========================================================================== */
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
     :root {
-      --bg-dark: #050811;
-      --bg-card: rgba(13, 20, 36, 0.85);
-      --bg-card-hover: rgba(20, 30, 52, 0.95);
-      --border-color: rgba(255, 255, 255, 0.1);
-      --border-accent: rgba(56, 189, 248, 0.4);
-
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --text-dim: #64748b;
-
-      --color-kernel: #1e293b;
-      --color-free: rgba(15, 23, 42, 0.9);
-      --color-internal: rgba(245, 158, 11, 0.35);
-      --color-external: rgba(239, 68, 68, 0.35);
-
-      --accent-cyan: #38bdf8;
-      --accent-emerald: #10b981;
+      --bg-dark: #070c18;
+      --bg-card: #0f172a;
+      --border-color: #1e293b;
+      --primary-cyan: #06b6d4;
+      --primary-indigo: #6366f1;
       --accent-amber: #f59e0b;
       --accent-rose: #f43f5e;
-      --accent-purple: #a855f7;
-      --accent-indigo: #6366f1;
-
-      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      --font-mono: 'Fira Code', monospace;
-
-      --glass-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.6);
-      --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      --transition-normal: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-      --transition-slide: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      --accent-emerald: #10b981;
+      --text-muted: #94a3b8;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body.dark-theme {
+    body {
       background-color: var(--bg-dark);
-      background-image: 
-        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.12) 0px, transparent 45%),
-        radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.12) 0px, transparent 45%),
-        linear-gradient(to bottom, rgba(5, 8, 17, 0.9), rgba(5, 8, 17, 0.95));
-      color: var(--text-main);
-      font-family: var(--font-sans);
+      color: #f8fafc;
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      line-height: 1.5;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      line-height: 1.5;
-      overflow-x: hidden;
     }
+    .font-mono { font-family: 'Fira Code', monospace; }
 
-    /* Top System Bar */
-    .sys-banner {
-      background: linear-gradient(90deg, rgba(99, 102, 241, 0.2), rgba(56, 189, 248, 0.2));
-      border-bottom: 1px solid var(--border-accent);
-      padding: 6px 2rem;
-      font-size: 0.75rem;
-      font-family: var(--font-mono);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: var(--accent-cyan);
-    }
-
-    .sys-banner-left { display: flex; align-items: center; gap: 1rem; }
-    .sys-status-indicator { display: inline-flex; align-items: center; gap: 6px; }
-    .sys-status-dot { width: 8px; height: 8px; background: var(--accent-emerald); border-radius: 50%; box-shadow: 0 0 8px var(--accent-emerald); }
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
     /* Header */
-    .app-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1rem 2rem;
-      background: var(--bg-card);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--border-color);
+    header {
+      background-color: #0f172a;
+      border-bottom: 1px solid #1e293b;
       position: sticky;
       top: 0;
-      z-index: 100;
+      z-index: 50;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
     }
+    .top-bar {
+      background-color: #020617;
+      border-bottom: 1px solid #1e293b;
+      padding: 6px 24px;
+      font-size: 11px;
+      color: var(--primary-cyan);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%; background-color: var(--accent-emerald);
+      display: inline-block; animation: pulse 2s infinite;
+      box-shadow: 0 0 8px var(--accent-emerald);
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-    .logo-area { display: flex; align-items: center; gap: 1rem; }
-    .cpu-icon {
-      width: 48px; height: 48px;
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
-      border-radius: 14px;
+    .main-header {
+      padding: 14px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    .logo-area { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+    .logo-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary-cyan), var(--primary-indigo));
       display: flex; align-items: center; justify-content: center;
-      color: #fff; box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+      font-weight: 800; font-size: 14px; color: white;
+      box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
     }
-
-    .logo-area h1 {
-      font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px;
-      display: flex; align-items: center; gap: 0.6rem;
+    .logo-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+    .badge-tag {
+      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px;
+      background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); color: var(--primary-cyan);
     }
-
-    .logo-area .badge {
-      font-size: 0.65rem; padding: 3px 10px;
-      background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan);
-      border: 1px solid var(--border-accent); border-radius: 20px;
-      font-family: var(--font-mono); font-weight: 700;
-    }
-
-    .logo-area .subtitle { font-size: 0.825rem; color: var(--text-muted); }
-    .header-actions { display: flex; align-items: center; gap: 0.75rem; }
-
-    .view-toggles {
-      display: flex; gap: 0.4rem; background: rgba(5, 8, 17, 0.7);
-      padding: 4px; border-radius: 12px; border: 1px solid var(--border-color);
-    }
-
-    .btn-toggle {
-      background: transparent; border: none; color: var(--text-muted);
-      padding: 8px 14px; border-radius: 8px; font-size: 0.825rem; font-weight: 600;
-      cursor: pointer; display: flex; align-items: center; gap: 0.5rem;
-      transition: var(--transition-fast);
-    }
-
-    .btn-toggle:hover { color: var(--text-main); background: rgba(255, 255, 255, 0.05); }
-    .btn-toggle.active {
-      background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple));
-      color: #fff; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
-    }
-
-    /* Live Analytics Dashboard Bar */
-    .stats-bar {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 1rem; padding: 1.25rem 2rem 0.5rem 2rem;
-    }
-
-    .stat-card {
-      background: var(--bg-card); backdrop-filter: blur(12px);
-      border: 1px solid var(--border-color); border-radius: 14px;
-      padding: 1rem 1.25rem; position: relative; overflow: hidden;
-      transition: var(--transition-fast); box-shadow: var(--glass-shadow);
-    }
-
-    .stat-card:hover { border-color: var(--border-accent); transform: translateY(-2px); }
-    .stat-label { font-size: 0.725rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 700; }
-    .stat-value { font-size: 1.55rem; font-weight: 800; font-family: var(--font-mono); margin: 0.2rem 0; }
-    .stat-sub { font-size: 0.75rem; color: var(--text-dim); }
-
-    .stat-card.accent-allocated { border-bottom: 3px solid var(--accent-cyan); }
-    .stat-card.accent-free { border-bottom: 3px solid var(--accent-emerald); }
-    .stat-card.accent-internal { border-bottom: 3px solid var(--accent-amber); }
-    .stat-card.accent-external { border-bottom: 3px solid var(--accent-rose); }
-    .stat-card.accent-efficiency { border-bottom: 3px solid var(--accent-purple); }
-
-    /* Main Workspace Grid */
-    .workspace-grid {
-      display: grid; grid-template-columns: 350px 1fr;
-      gap: 1.5rem; padding: 1.25rem 2rem 2rem 2rem; flex: 1;
-    }
-
-    @media (max-width: 1080px) { .workspace-grid { grid-template-columns: 1fr; } }
-
-    /* Sidebar Controls */
-    .sidebar { display: flex; flex-direction: column; gap: 1.25rem; }
-
-    .card {
-      background: var(--bg-card); backdrop-filter: blur(16px);
-      border: 1px solid var(--border-color); border-radius: 18px;
-      padding: 1.25rem; box-shadow: var(--glass-shadow);
-    }
-
-    .control-group h3 {
-      font-size: 0.925rem; font-weight: 700; margin-bottom: 1rem;
-      display: flex; align-items: center; gap: 0.5rem; color: var(--text-main);
-    }
-
-    .step-num {
-      width: 24px; height: 24px; background: rgba(56, 189, 248, 0.15);
-      color: var(--accent-cyan); border-radius: 50%; display: inline-flex;
-      align-items: center; justify-content: center; font-size: 0.75rem;
-      font-weight: 800; font-family: var(--font-mono);
-    }
-
-    .help-text { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem; }
-
-    /* Inline Validation Toast */
-    .error-toast {
-      background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4);
-      color: #f87171; padding: 8px 12px; border-radius: 8px; font-size: 0.8rem;
-      margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px;
-    }
-    .error-toast.hidden { display: none; }
-
-    /* Active Processes Termination Manager */
-    .active-proc-list {
-      display: flex; flex-direction: column; gap: 0.5rem; max-height: 160px; overflow-y: auto;
-      margin-top: 0.75rem; padding-right: 4px;
-    }
-
-    .proc-item-card {
-      background: rgba(5, 8, 17, 0.7); border: 1px solid var(--border-color);
-      border-radius: 8px; padding: 6px 10px; display: flex; justify-content: space-between;
-      align-items: center; font-size: 0.8rem; font-family: var(--font-mono);
-    }
-
-    .proc-item-card .kill-btn {
-      background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4);
-      padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; cursor: pointer;
-    }
-    .proc-item-card .kill-btn:hover { background: #ef4444; color: #fff; }
-
-    /* Forms & Inputs */
-    .form-row { margin-bottom: 0.85rem; }
-    .form-row label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem; font-weight: 600; }
-
-    .form-select, .form-input {
-      width: 100%; padding: 10px 14px; background: rgba(5, 8, 17, 0.8);
-      border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-main);
-      font-family: var(--font-sans); font-size: 0.875rem; transition: var(--transition-fast);
-    }
-
-    .form-select:focus, .form-input:focus {
-      outline: none; border-color: var(--accent-cyan); box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
-    }
-
-    .inline-row { display: flex; gap: 0.5rem; margin-top: 1rem; }
-
-    /* Buttons */
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .btn {
-      display: inline-flex; align-items: center; justify-content: center;
-      gap: 0.4rem; padding: 10px 16px; font-size: 0.85rem; font-weight: 700;
-      border-radius: 10px; border: none; cursor: pointer; transition: var(--transition-fast);
+      padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 700;
+      border: 1px solid #334155; background-color: #1e293b; color: #f8fafc;
+      cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+      font-family: inherit;
+    }
+    .btn:hover { background-color: #334155; border-color: #475569; }
+    .btn-accent {
+      background: linear-gradient(135deg, var(--accent-amber), #ea580c);
+      color: #020617; border: none; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+    .btn-accent:hover { filter: brightness(1.1); }
+    .btn-cyan {
+      background: linear-gradient(135deg, var(--primary-cyan), var(--primary-indigo));
+      color: white; border: none; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+    }
+    .btn-cyan:hover { filter: brightness(1.15); transform: translateY(-1px); }
+    .btn-emerald {
+      background: linear-gradient(135deg, var(--accent-emerald), #059669);
+      color: #020617; border: none; font-weight: 800; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    .btn-emerald:hover { filter: brightness(1.1); }
+    .btn-sm { padding: 4px 10px; font-size: 11px; }
+
+    /* Nav Tabs */
+    .nav-tabs {
+      background-color: rgba(2, 6, 23, 0.6);
+      border-top: 1px solid #1e293b;
+      padding: 0 24px;
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      padding: 10px 16px; font-size: 12px; font-weight: 700; color: #94a3b8;
+      background: transparent; border: none; border-bottom: 2px solid transparent;
+      cursor: pointer; transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.5px;
+      white-space: nowrap; font-family: inherit;
+    }
+    .tab-btn:hover { color: #f8fafc; }
+    .tab-btn.active { color: var(--primary-cyan); border-bottom-color: var(--primary-cyan); background-color: #0f172a; border-radius: 8px 8px 0 0; }
+
+    /* Layout & Cards */
+    main { flex: 1; padding: 24px; max-width: 1400px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+    .card {
+      background-color: rgba(15, 23, 42, 0.9);
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .card-title {
+      font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+      border-bottom: 1px solid #1e293b; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 8px;
     }
 
-    .btn-block { width: 100%; }
-    .btn-primary { background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo)); color: #fff; box-shadow: 0 4px 14px rgba(56, 189, 248, 0.35); }
-    .btn-primary:hover { filter: brightness(1.15); box-shadow: 0 4px 18px rgba(56, 189, 248, 0.5); }
-    .btn-secondary { background: rgba(255, 255, 255, 0.08); color: var(--text-main); }
-    .btn-secondary:hover { background: rgba(255, 255, 255, 0.15); }
-    .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; }
-    .btn-warning:hover { filter: brightness(1.15); }
-    .btn-success { background: var(--accent-emerald); color: #fff; }
-    .btn-danger { background: var(--accent-rose); color: #fff; }
-    .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
-    .btn-outline:hover { background: rgba(255, 255, 255, 0.08); }
-
-    .btn-xs { font-size: 0.7rem; padding: 4px 8px; background: rgba(255, 255, 255, 0.1); border: none; border-radius: 6px; color: var(--text-muted); cursor: pointer; }
-    .btn-xs:hover { color: var(--text-main); background: rgba(255, 255, 255, 0.2); }
-
-    /* Preset Buttons Grid */
-    .preset-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-    .btn-preset {
-      background: rgba(5, 8, 17, 0.7); border: 1px solid var(--border-color);
-      padding: 10px; border-radius: 10px; text-align: left; cursor: pointer;
-      display: flex; flex-direction: column; transition: var(--transition-fast);
+    .grid-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    .metric-box {
+      background-color: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 14px;
+      display: flex; flex-direction: column; gap: 4px; position: relative;
     }
-    .btn-preset:hover { border-color: var(--accent-cyan); background: rgba(56, 189, 248, 0.08); transform: translateY(-1px); }
-    .preset-name { font-size: 0.78rem; font-weight: 700; color: var(--text-main); }
-    .preset-desc { font-size: 0.68rem; color: var(--text-dim); }
+    .metric-label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .metric-val { font-size: 22px; font-weight: 800; font-family: 'Fira Code', monospace; }
+    .metric-sub { font-size: 10px; color: var(--text-muted); }
 
-    /* Sim Controls */
-    .sim-controls { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
-    .sim-controls .btn { flex: 1; }
-    .speed-row input[type="range"] { width: 100%; accent-color: var(--accent-cyan); }
+    .grid-dashboard { display: grid; grid-template-columns: 360px 1fr; gap: 24px; }
+    @media (max-width: 1024px) { .grid-dashboard { grid-template-columns: 1fr; } }
 
-    /* Visualization Area */
-    .visualization-area { display: flex; flex-direction: column; gap: 1.25rem; }
-    .view-panel { display: none; }
-    .view-panel.active { display: flex; flex-direction: column; gap: 1.25rem; }
-    .hidden { display: none !important; }
-
-    /* Legend */
-    .map-legend {
-      display: flex; flex-wrap: wrap; gap: 1.25rem; background: var(--bg-card);
-      padding: 0.85rem 1.25rem; border-radius: 14px; border: 1px solid var(--border-color);
-      font-size: 0.8rem; color: var(--text-muted); align-items: center;
+    /* Form Controls */
+    label { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; display: block; }
+    input, select {
+      width: 100%; background-color: #020617; border: 1px solid #334155; border-radius: 10px;
+      padding: 8px 12px; font-size: 12px; color: white; font-family: 'Fira Code', monospace; outline: none;
     }
+    input:focus, select:focus { border-color: var(--primary-cyan); }
 
-    .legend-item { display: flex; align-items: center; gap: 0.45rem; font-weight: 500; }
-    .color-dot { width: 12px; height: 12px; border-radius: 3px; }
-    .os-dot { background: var(--color-kernel); border: 1px solid #475569; }
-    .allocated-dot { background: linear-gradient(135deg, #0284c7, #2563eb); }
-    .internal-dot { background: var(--color-internal); background-image: repeating-linear-gradient(45deg, #f59e0b 0, #f59e0b 2px, transparent 0, transparent 6px); }
-    .external-dot { background: var(--color-external); border: 1px dashed #ef4444; }
-    .free-dot { background: var(--color-free); border: 1px solid var(--border-color); }
-    .pointer-dot { background: #eab308; border-radius: 50%; box-shadow: 0 0 6px #eab308; }
+    /* Memory Track Bar */
+    .track-wrapper { display: flex; flex-direction: column; gap: 8px; padding: 0 8px; }
+    .ruler { height: 26px; position: relative; border-bottom: 1px solid #1e293b; font-size: 9px; color: #64748b; font-family: 'Fira Code', monospace; }
+    .ruler-tick { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; white-space: nowrap; }
+    .ruler-tick-line { width: 1px; height: 6px; background-color: #334155; margin-top: 2px; }
 
-    .sub-view-tabs { display: flex; gap: 0.5rem; margin-left: auto; }
-    .sub-tab-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; }
-    .sub-tab-btn.active { background: var(--accent-cyan); color: #000; border-color: var(--accent-cyan); font-weight: 700; }
-
-    /* External Frag High Priority Banner */
-    .ext-frag-alert-banner {
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.35));
-      border: 1px solid rgba(239, 68, 68, 0.6); border-radius: 12px; padding: 12px 16px;
-      color: #fca5a5; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between;
-      animation: alertPulse 2s infinite;
+    .track-container {
+      height: 140px; background-color: #020617; border-radius: 14px; border: 1px solid #1e293b;
+      display: flex; overflow: hidden; position: relative; box-shadow: inset 0 2px 10px rgba(0,0,0,0.8);
     }
-    @keyframes alertPulse { 0% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); } 50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.7); } 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); } }
-
-    /* Memory Map Track & Ruler */
-    .memory-map-wrapper {
-      background: var(--bg-card); border: 1px solid var(--border-color);
-      border-radius: 18px; padding: 1.5rem; box-shadow: var(--glass-shadow);
-      display: flex; flex-direction: column; gap: 0.5rem; position: relative;
+    .block-segment {
+      height: 100%; padding: 8px; font-family: 'Fira Code', monospace; display: flex; flex-direction: column; justify-content: space-between;
+      cursor: pointer; transition: all 0.2s; user-select: none; border-right: 1px solid rgba(255,255,255,0.15); position: relative;
+      overflow: hidden;
     }
-
-    .memory-ruler { height: 26px; position: relative; border-bottom: 1px solid var(--border-color); font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-dim); }
-    .ruler-tick { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
-    .ruler-tick::after { content: ''; width: 1px; height: 6px; background: var(--text-dim); margin-top: 2px; }
-
-    .memory-track {
-      height: 150px; background: rgba(5, 8, 17, 0.95); border-radius: 14px;
-      border: 1px solid var(--border-color); display: flex; overflow: hidden;
-      position: relative; box-shadow: inset 0 2px 10px rgba(0,0,0,0.7);
-    }
-
-    /* Animated Compaction Block Movement */
-    .mem-block {
-      height: 100%; display: flex; flex-direction: column; justify-content: space-between;
-      padding: 10px; position: relative; transition: var(--transition-slide);
-      font-family: var(--font-mono); cursor: pointer; user-select: none;
-    }
-
-    .mem-block:hover { filter: brightness(1.2); z-index: 10; }
-    .mem-block.os-block { background: var(--color-kernel); border-right: 2px solid rgba(255, 255, 255, 0.2); color: #cbd5e1; }
-    .mem-block.allocated-block { background: linear-gradient(135deg, #0369a1, #1d4ed8); border-right: 1px solid rgba(255,255,255,0.25); color: #fff; box-shadow: 0 0 12px rgba(3, 105, 161, 0.4); }
-    .mem-block.free-block { background: rgba(15, 23, 42, 0.6); border-right: 1px dashed rgba(255, 255, 255, 0.12); color: var(--text-dim); }
-
-    /* Internal Fragmentation Overlay */
-    .internal-frag-overlay {
-      position: absolute; top: 0; right: 0; bottom: 0;
-      background: repeating-linear-gradient(45deg, rgba(245, 158, 11, 0.4), rgba(245, 158, 11, 0.4) 6px, rgba(217, 119, 6, 0.65) 6px, rgba(217, 119, 6, 0.65) 12px);
-      border-left: 2px dashed #f59e0b; display: flex; align-items: center; justify-content: center;
-      color: #fef08a; font-size: 0.68rem; font-weight: 800; text-shadow: 0 1px 3px rgba(0,0,0,0.9); overflow: hidden;
-    }
-
-    /* External Fragmentation Alert Overlay */
-    .mem-block.external-frag-alert {
-      background: rgba(239, 68, 68, 0.25) !important;
-      border: 2px dashed #ef4444 !important;
-      animation: pulseAlert 1.5s infinite;
-    }
-
-    @keyframes pulseAlert { 0% { box-shadow: inset 0 0 5px rgba(239, 68, 68, 0.4); } 50% { box-shadow: inset 0 0 22px rgba(239, 68, 68, 0.95); } 100% { box-shadow: inset 0 0 5px rgba(239, 68, 68, 0.4); } }
-
-    .block-title { font-weight: 800; font-size: 0.875rem; display: flex; justify-content: space-between; align-items: center; }
-
-    .dealloc-btn {
-      font-size: 1rem; font-weight: bold; cursor: pointer; color: #cbd5e1;
-      padding: 2px 6px; background: rgba(239, 68, 68, 0.2); border-radius: 4px; border: 1px solid rgba(239, 68, 68, 0.4);
-    }
-    .dealloc-btn:hover { background: #ef4444; color: #fff; }
-
-    .block-size { font-size: 0.725rem; opacity: 0.95; }
-    .block-addr { font-size: 0.65rem; opacity: 0.8; }
-
-    /* Floating Hover Tooltip */
-    .hover-tooltip {
-      position: absolute; pointer-events: none; background: #0f172a; border: 1px solid var(--accent-cyan);
-      border-radius: 8px; padding: 8px 12px; font-size: 0.75rem; font-family: var(--font-mono);
-      color: #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.8); z-index: 1000; display: none; width: 220px;
-    }
-
-    /* Next Fit Pointer Marker (STRICTLY CONTAINED WITHIN RELATIVE TRACKS) */
-    .pointer-line {
-      position: absolute; top: 0; bottom: 0; width: 4px; background: #eab308;
-      box-shadow: 0 0 14px #eab308; z-index: 20; transition: left 0.4s ease; pointer-events: none;
-    }
-
-    .pointer-line::before {
-      content: 'CURSOR'; position: absolute; top: -22px; left: 50%;
-      transform: translateX(-50%); background: #eab308; color: #000; font-size: 0.58rem;
-      font-weight: 800; padding: 1px 4px; border-radius: 3px; font-family: var(--font-mono); white-space: nowrap;
-    }
-
-    /* Frame Matrix View (64 Frames) */
-    .frame-matrix-container { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 18px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
-    .matrix-grid { display: grid; grid-template-columns: repeat(16, 1fr); gap: 6px; }
-    @media (max-width: 900px) { .matrix-grid { grid-template-columns: repeat(8, 1fr); } }
-
-    .frame-cell {
-      height: 48px; background: rgba(5, 8, 17, 0.8); border: 1px solid var(--border-color);
-      border-radius: 6px; display: flex; flex-direction: column; align-items: center;
-      justify-content: center; font-family: var(--font-mono); font-size: 0.65rem; cursor: pointer; transition: var(--transition-fast);
-    }
-    .frame-cell:hover { border-color: var(--accent-cyan); transform: scale(1.05); }
-    .frame-cell.frame-kernel { background: var(--color-kernel); color: var(--accent-cyan); }
-    .frame-cell.frame-allocated { background: linear-gradient(135deg, #0369a1, #1d4ed8); color: #fff; }
-    .frame-cell.frame-free { color: var(--text-dim); }
-    .frame-id { font-weight: 700; }
-    .frame-tag { font-size: 0.58rem; opacity: 0.85; }
-
-    /* Block Details Cards Grid */
-    .block-details-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0.85rem; }
-    .block-card-item { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 0.85rem; font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.3rem; transition: var(--transition-fast); }
-    .block-card-item:hover { border-color: var(--border-accent); }
-    .block-card-item .badge-free { color: var(--accent-emerald); }
-    .block-card-item .badge-proc { color: var(--accent-cyan); font-weight: 700; }
-    .block-card-item .badge-frag { color: var(--accent-amber); font-weight: 700; }
-
-    /* Log Card */
-    .log-card { display: flex; flex-direction: column; gap: 0.75rem; max-height: 250px; }
-    .log-header { display: flex; justify-content: space-between; align-items: center; }
-
-    .log-content {
-      background: rgba(5, 8, 17, 0.85); border: 1px solid var(--border-color);
-      border-radius: 10px; padding: 0.75rem; font-family: var(--font-mono);
-      font-size: 0.78rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column;
-      gap: 0.35rem; min-height: 120px;
-    }
-
-    .log-entry { padding: 4px 8px; border-radius: 4px; }
-    .log-entry.info { color: var(--text-muted); }
-    .log-entry.success { color: #4ade80; background: rgba(74, 222, 128, 0.1); }
-    .log-entry.warning { color: #fbbf24; background: rgba(251, 191, 36, 0.1); }
-    .log-entry.danger { color: #f87171; background: rgba(248, 113, 113, 0.15); font-weight: 700; }
-
-    /* Comparison 4-Way View (FIXED: RELATIVE CONTAINER PREVENTS YELLOW LINE OVERFLOW) */
-    .compare-header { margin-bottom: 0.5rem; }
-    .compare-header h2 { font-size: 1.25rem; font-weight: 800; }
-    .compare-header p { font-size: 0.85rem; color: var(--text-muted); }
-    .compare-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
-    @media (max-width: 900px) { .compare-grid { grid-template-columns: 1fr; } }
-
-    .compare-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.1rem; display: flex; flex-direction: column; gap: 0.75rem; }
-    .compare-card-header { display: flex; justify-content: space-between; align-items: center; }
-    .compare-card-header h3 { font-size: 1rem; color: var(--accent-cyan); font-weight: 800; }
-    .compare-badge { font-size: 0.75rem; font-family: var(--font-mono); background: rgba(255, 255, 255, 0.08); padding: 3px 10px; border-radius: 6px; }
-    .compare-metrics { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); background: rgba(5, 8, 17, 0.6); padding: 6px 12px; border-radius: 8px; }
+    .block-segment:hover { filter: brightness(1.25); z-index: 5; }
+    .block-os { background-color: #1e293b; color: var(--primary-cyan); font-weight: 800; border-right: 2px solid #475569; }
+    .block-alloc { background: linear-gradient(135deg, #0e7490, #4338ca); color: white; font-weight: 800; }
+    .block-free { background-color: rgba(2, 6, 23, 0.85); color: #94a3b8; border-right: 1px dashed #334155; }
+    .block-free.alert { background-color: rgba(244, 63, 94, 0.15); border: 2px dashed var(--accent-rose); animation: pulse 1.5s infinite; }
     
-    .compare-track {
-      height: 75px; background: rgba(5, 8, 17, 0.95); border-radius: 10px;
-      border: 1px solid var(--border-color); display: flex; overflow: hidden;
-      position: relative; /* REQUIRED TO CONTAIN POINTER LINE */
+    .frag-overlay {
+      position: absolute; top: 0; right: 0; bottom: 0; background: repeating-linear-gradient(45deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.2) 6px, rgba(245, 158, 11, 0.4) 6px, rgba(245, 158, 11, 0.4) 12px);
+      border-left: 2px dashed var(--accent-amber); display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 800; color: #fef08a; padding: 2px 4px;
     }
 
-    /* Comparison Final Analytics Summary Table */
-    .compare-summary-table {
-      width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.825rem; font-family: var(--font-sans);
+    .cursor-line {
+      position: absolute; top: 0; bottom: 0; width: 4px; background-color: var(--accent-amber);
+      box-shadow: 0 0 12px var(--accent-amber); z-index: 20; pointer-events: none; transition: left 0.3s ease;
     }
-    .compare-summary-table th, .compare-summary-table td {
-      border: 1px solid var(--border-color); padding: 10px 14px; text-align: left;
-    }
-    .compare-summary-table th { background: rgba(15, 23, 42, 0.9); color: var(--accent-cyan); font-weight: 700; }
-    .compare-summary-table tr:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
 
-    /* Modal Overlay */
-    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal-card { background: #111827; border: 1px solid var(--border-accent); border-radius: 20px; width: 90%; max-width: 520px; padding: 1.75rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8); }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.85rem; }
-    .close-btn { background: transparent; border: none; color: var(--text-muted); font-size: 1.6rem; cursor: pointer; }
-    .close-btn:hover { color: var(--text-main); }
+    /* Alert Banner */
+    .alert-banner {
+      background: linear-gradient(90deg, rgba(136, 19, 55, 0.6), rgba(153, 27, 27, 0.8), rgba(136, 19, 55, 0.6));
+      border: 1px solid var(--accent-rose); border-radius: 12px; padding: 14px 18px; color: #fecdd3; font-size: 12px;
+      display: flex; justify-content: space-between; align-items: center; gap: 14px; animation: pulse 2s infinite;
+    }
+    .stale-banner {
+      background: linear-gradient(90deg, rgba(120, 53, 15, 0.7), rgba(180, 83, 9, 0.8), rgba(120, 53, 15, 0.7));
+      border: 1px solid var(--accent-amber); border-radius: 12px; padding: 12px 16px; color: #fef3c7; font-size: 12px;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    }
+
+    /* Academic Note Box */
+    .academic-note {
+      background-color: rgba(2, 6, 23, 0.8); border: 1px solid rgba(6, 182, 212, 0.3);
+      border-radius: 10px; padding: 10px 14px; font-size: 11px; color: #cbd5e1;
+      display: flex; align-items: center; gap: 8px; line-height: 1.4;
+    }
+
+    /* 64 Block Grid */
+    .block-grid { display: grid; grid-template-columns: repeat(16, 1fr); gap: 4px; font-family: 'Fira Code', monospace; font-size: 9px; }
+    @media (max-width: 768px) { .block-grid { grid-template-columns: repeat(8, 1fr); } }
+    .grid-cell {
+      height: 38px; border-radius: 6px; border: 1px solid #1e293b; background-color: #020617;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s;
+      position: relative;
+    }
+    .grid-cell:hover { border-color: var(--primary-cyan); z-index: 2; transform: scale(1.05); }
+    .grid-cell.cell-os { background-color: #1e293b; color: var(--primary-cyan); font-weight: 700; }
+    .grid-cell.cell-alloc { background: linear-gradient(135deg, #0e7490, #4338ca); color: white; font-weight: 700; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; font-family: 'Fira Code', monospace; font-size: 11px; text-align: left; }
+    th { padding: 10px; border-bottom: 1px solid #1e293b; color: var(--text-muted); text-transform: uppercase; font-size: 10px; }
+    td { padding: 10px; border-bottom: 1px solid #0f172a; }
+    tr:hover td { background-color: rgba(30, 41, 59, 0.4); }
+
+    /* Console Log */
+    .console-log {
+      background-color: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 12px;
+      font-family: 'Fira Code', monospace; font-size: 11px; height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
+    }
+
+    /* Benchmark Specific Styles */
+    .benchmark-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .benchmark-card {
+      background-color: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 14px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .benchmark-track {
+      height: 60px; background-color: #0f172a; border-radius: 8px; border: 1px solid #1e293b;
+      display: flex; overflow: hidden; position: relative;
+    }
+    .badge-winner {
+      background: rgba(16, 185, 129, 0.15); border: 1px solid var(--accent-emerald);
+      color: var(--accent-emerald); padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700;
+    }
+    .chart-bar-container { display: flex; flex-direction: column; gap: 8px; }
+    .chart-row { display: flex; align-items: center; gap: 8px; font-size: 11px; font-family: 'Fira Code', monospace; }
+    .chart-label { width: 90px; color: var(--text-muted); text-align: right; }
+    .chart-bar-bg { flex: 1; height: 16px; background: #0f172a; border-radius: 4px; overflow: hidden; position: relative; }
+    .chart-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+    .chart-val { width: 60px; font-weight: 700; text-align: left; }
+
+    /* Print / Lab Report Styles */
+    @media print {
+      body { background: white; color: black; font-size: 10pt; }
+      header, .nav-tabs, .btn, .btn-group, select, input, .console-log, button { display: none !important; }
+      .card { border: 1px solid #ccc; box-shadow: none; page-break-inside: avoid; margin-bottom: 20px; }
+      .track-container { border: 1px solid #000; }
+      table { border: 1px solid #000; }
+      th, td { border: 1px solid #ccc; color: black !important; }
+      .print-header { display: block !important; margin-bottom: 20px; border-bottom: 2px solid black; padding-bottom: 10px; }
+    }
+    .print-header { display: none; }
   </style>
 </head>
-<body class="dark-theme">
-  <!-- Top System Status Banner -->
-  <div class="sys-banner">
-    <div class="sys-banner-left">
-      <span class="sys-status-indicator"><span class="sys-status-dot"></span> OS KERNEL ACTIVE</span>
-      <span>|</span>
-      <span>MEMORY ARCHITECTURE: CONTINUOUS PHYSICAL RAM ALLOCATION</span>
-    </div>
-    <div>
-      <span>PHYSICAL ADDRESS BOUNDS: 0x0000_0000 - 0x000F_FFFF (1024 KB)</span>
-    </div>
-  </div>
+<body>
 
-  <!-- Top Navigation & Header -->
-  <header class="app-header">
-    <div class="logo-area">
-      <div class="cpu-icon">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="4" y="4" width="16" height="16" rx="2" />
-          <rect x="9" y="9" width="6" height="6" />
-          <path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3" />
-        </svg>
+  <!-- Header -->
+  <header>
+    <div class="top-bar">
+      <div>
+        <span class="status-dot"></span>
+        <strong style="margin-left: 6px; color: var(--accent-emerald);">OS KERNEL ACTIVE</strong>
+        <span style="color: #334155; margin: 0 8px;">|</span>
+        <span>CONTIGUOUS PHYSICAL MEMORY SIMULATOR</span>
       </div>
       <div>
-        <h1>MEMMAP PRO <span class="badge">ACADEMIC LAB</span></h1>
-        <p class="subtitle">Operating Systems Main Memory Contiguous Partitioning & Fragmentation Console</p>
+        <span>SIMULATION SPACE: 0 KB — 1024 KB</span>
+        <span style="color: #64748b; margin-left: 6px;">[Display: 0x0000 — 0x0400]</span>
+        <span style="color: #334155; margin: 0 8px;">|</span>
+        <strong style="color: var(--accent-amber);">ACADEMIC EVALUATION READY</strong>
       </div>
     </div>
 
-    <div class="header-actions">
-      <button id="exportReportBtn" class="btn btn-secondary" title="Generate Academic Laboratory Report">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Print Lab Report
-      </button>
-
-      <div class="view-toggles">
-        <button id="singleViewBtn" class="btn-toggle active" data-view="single">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-          Single Map View
-        </button>
-        <button id="compareViewBtn" class="btn-toggle" data-view="compare">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="18" rx="1"/><rect x="13" y="3" width="8" height="18" rx="1"/></svg>
-          4-Algorithm Benchmark
-        </button>
+    <div class="main-header">
+      <div class="logo-area" onclick="switchTab('simulator')">
+        <div class="logo-icon">RAM</div>
+        <div>
+          <div class="logo-title">
+            MEMORYMAP PRO
+            <span class="badge-tag">OS LABORATORY</span>
+          </div>
+          <p style="font-size: 11px; color: var(--text-muted);">Main Memory Contiguous Allocation, Fragmentation & Compaction Laboratory</p>
+        </div>
       </div>
+
+      <div class="btn-group">
+        <button class="btn btn-cyan" id="btn-header-benchmark" onclick="runBenchmarkFromHeader()" title="Execute 4-Algorithm Benchmark">
+          ⚡ Run Benchmark
+        </button>
+        <button class="btn" onclick="triggerRandomScenario()">↻ Random Scenario</button>
+        <button class="btn btn-accent" onclick="toggleDemoMode()">✨ Demo Mode</button>
+        <button class="btn" onclick="exportLabReport()">📄 Lab Report</button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <button class="tab-btn active" id="tab-btn-simulator" onclick="switchTab('simulator')">Simulator Arena</button>
+      <button class="tab-btn" id="tab-btn-benchmark" onclick="switchTab('benchmark')">4-Algorithm Benchmark</button>
+      <button class="tab-btn" id="tab-btn-experiments" onclick="switchTab('experiments')">Experiment Mode (7 Labs)</button>
     </div>
   </header>
 
-  <!-- Live Stats Dashboard -->
-  <section class="stats-bar">
-    <div class="stat-card">
-      <div class="stat-label">Total RAM</div>
-      <div class="stat-value" id="statTotalRam">1024 KB</div>
-      <div class="stat-sub" id="statAddressRange">0x0000 - 0x0400</div>
-    </div>
-    <div class="stat-card accent-allocated">
-      <div class="stat-label">Allocated RAM</div>
-      <div class="stat-value" id="statAllocated">128 KB</div>
-      <div class="stat-sub" id="statAllocatedPct">12.5%</div>
-    </div>
-    <div class="stat-card accent-free">
-      <div class="stat-label">Free Space</div>
-      <div class="stat-value" id="statFree">896 KB</div>
-      <div class="stat-sub" id="statFreePct">87.5%</div>
-    </div>
-    <div class="stat-card accent-internal">
-      <div class="stat-label">Internal Frag</div>
-      <div class="stat-value" id="statInternal">0 KB</div>
-      <div class="stat-sub" id="statInternalNote">Inside partitions</div>
-    </div>
-    <div class="stat-card accent-external">
-      <div class="stat-label">External Frag</div>
-      <div class="stat-value" id="statExternal">0 KB (0 holes)</div>
-      <div class="stat-sub" id="statExternalNote">Unusable free holes</div>
-    </div>
-    <div class="stat-card accent-efficiency">
-      <div class="stat-label">Memory Efficiency</div>
-      <div class="stat-value" id="statEfficiency">100%</div>
-      <div class="stat-sub" id="statSuccessCount">0 / 0 succeeded</div>
-    </div>
-  </section>
-
-  <!-- Floating Hover Preview Tooltip -->
-  <div id="hoverTooltip" class="hover-tooltip"></div>
-
-  <!-- Main Grid Workspace -->
-  <main class="workspace-grid">
-    <!-- Sidebar Controls -->
-    <aside class="sidebar">
-      <!-- Section 1: Memory Scheme Config -->
-      <div class="card control-group">
-        <h3><span class="step-num">1</span> Memory Configuration</h3>
-        
-        <div class="form-row">
-          <label for="partitionScheme">Partition Scheme:</label>
-          <select id="partitionScheme" class="form-select">
-            <option value="dynamic" selected>Dynamic Partitioning (Variable)</option>
-            <option value="fixed-equal">Fixed Equal Partitions (8x128KB)</option>
-            <option value="fixed-unequal">Fixed Unequal Partitions (64, 128, 256, 448KB)</option>
-          </select>
-        </div>
-
-        <div class="form-row">
-          <label for="fitAlgorithm">Placement Algorithm:</label>
-          <select id="fitAlgorithm" class="form-select">
-            <option value="first">First Fit</option>
-            <option value="best">Best Fit</option>
-            <option value="worst">Worst Fit</option>
-            <option value="next">Next Fit (Rotational)</option>
-            <option value="quick">Quick Fit (Size Bucketed)</option>
-          </select>
-        </div>
-
-        <div class="form-row inline-row">
-          <button id="compactBtn" class="btn btn-warning" title="Compact free memory into one contiguous block">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"/></svg>
-            Compact Memory
-          </button>
-          <button id="resetBtn" class="btn btn-secondary">Reset Memory</button>
-        </div>
-      </div>
-
-      <!-- Section 2: Preset Scenarios -->
-      <div class="card control-group">
-        <h3><span class="step-num">2</span> Academic Workloads</h3>
-        <p class="help-text">Load standard OS textbook scenarios:</p>
-        <div class="preset-buttons">
-          <button class="btn btn-preset" data-preset="internalFrag">
-            <span class="preset-name">Internal Frag Trap</span>
-            <span class="preset-desc">Fixed partitions wasted space</span>
-          </button>
-          <button class="btn btn-preset" data-preset="externalFrag">
-            <span class="preset-name">External Frag Split</span>
-            <span class="preset-desc">Non-contiguous free gaps</span>
-          </button>
-          <button class="btn btn-preset" data-preset="bestVsWorst">
-            <span class="preset-name">Best vs Worst Fit</span>
-            <span class="preset-desc">Small residual hole creation</span>
-          </button>
-          <button class="btn btn-preset" data-preset="nextFitWalk">
-            <span class="preset-name">Next Fit Pointer Walk</span>
-            <span class="preset-desc">Rotational search position</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Section 3: Custom Process Allocator -->
-      <div class="card control-group">
-        <h3><span class="step-num">3</span> Allocate Process</h3>
-        
-        <!-- Inline Error Validation Toast -->
-        <div id="errorToast" class="error-toast hidden">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <span id="errorToastMsg">Process size exceeds RAM capacity!</span>
-        </div>
-
-        <form id="addProcessForm" class="process-form">
-          <div class="form-row">
-            <label for="procName">Process Name / PID:</label>
-            <input type="text" id="procName" class="form-input" placeholder="e.g. P1" value="P1" required>
-          </div>
-          <div class="form-row">
-            <label for="procSize">Process Size (KB):</label>
-            <input type="number" id="procSize" class="form-input" min="10" max="896" value="150" required>
-          </div>
-          <button type="submit" class="btn btn-primary btn-block">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Allocate Memory Block
-          </button>
-        </form>
-      </div>
-
-      <!-- Section 4: Active Processes Deallocation / Termination Panel -->
-      <div class="card control-group">
-        <h3><span class="step-num">4</span> Process Termination Manager</h3>
-        <p class="help-text">Terminate active processes to create free holes:</p>
-        <div class="active-proc-list" id="activeProcList">
-          <div style="font-size:0.78rem; color:var(--text-dim);">No active processes allocated.</div>
-        </div>
-      </div>
-
-      <!-- Section 5: Simulation Controls -->
-      <div class="card control-group">
-        <h3><span class="step-num">5</span> Workload Stream Controls</h3>
-        <div class="sim-controls">
-          <button id="stepBtn" class="btn btn-outline" title="Process next queued item">Step</button>
-          <button id="playBtn" class="btn btn-success" title="Auto-run queue">Auto Play</button>
-          <button id="pauseBtn" class="btn btn-danger hidden" title="Pause simulation">Pause</button>
-        </div>
-        <div class="form-row speed-row">
-          <label for="speedSlider">Simulation Speed:</label>
-          <input type="range" id="speedSlider" min="200" max="2000" step="100" value="800">
-        </div>
-      </div>
-    </aside>
-
-    <!-- Main Visualization Area -->
-    <section class="visualization-area">
-      <!-- Single Map View Container -->
-      <div id="singleMapContainer" class="view-panel active">
-        <!-- External Frag High Priority Failure Banner -->
-        <div id="extFragAlertBanner" class="ext-frag-alert-banner hidden">
-          <div>
-            <strong style="color:#fff;">🚨 ALLOCATION FAILURE: External Fragmentation Detected!</strong>
-            <div id="extFragAlertText" style="margin-top:2px;">Process requested 300 KB. Total free space is 450 KB, but scattered across 3 isolated holes!</div>
-          </div>
-          <button class="btn btn-warning btn-xs" onclick="app.compactMemory()">Compact Memory Now</button>
-        </div>
-
-        <!-- Legend & Sub-Tab Bar -->
-        <div class="map-legend">
-          <div class="legend-item"><span class="color-dot os-dot"></span> OS Kernel Reserved</div>
-          <div class="legend-item"><span class="color-dot allocated-dot"></span> Process Allocated</div>
-          <div class="legend-item"><span class="color-dot internal-dot"></span> Internal Fragmentation</div>
-          <div class="legend-item"><span class="color-dot external-dot"></span> External Frag Gap</div>
-          <div class="legend-item"><span class="color-dot free-dot"></span> Free Hole</div>
-          <div class="legend-item" id="pointerLegend" style="display:none;"><span class="color-dot pointer-dot"></span> Scan Pointer</div>
-
-          <div class="sub-view-tabs">
-            <button id="linearMapTab" class="sub-tab-btn active">Linear Track</button>
-            <button id="matrixMapTab" class="sub-tab-btn">64-Frame Grid</button>
-          </div>
-        </div>
-
-        <!-- Linear Physical Memory Track View -->
-        <div id="linearTrackView" class="memory-map-wrapper">
-          <div class="memory-ruler" id="memoryRuler"></div>
-          <div class="memory-track" id="memoryTrack"></div>
-        </div>
-
-        <!-- Physical Frame Grid View (64 Frame Grid) -->
-        <div id="matrixFrameView" class="frame-matrix-container hidden">
-          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; font-weight:700; color:var(--text-muted);">
-            <span>Physical Page/Frame Matrix (64 Frames @ 16 KB per Frame)</span>
-            <span style="font-family:var(--font-mono); font-size:0.75rem;">Frame 00 (0x0000) to Frame 63 (0x03F0)</span>
-          </div>
-          <div class="matrix-grid" id="matrixGrid"></div>
-        </div>
-
-        <!-- Detailed Memory Block Inspection Cards -->
-        <div class="block-details-grid" id="blockDetailsGrid"></div>
-
-        <!-- Step-by-Step Algorithm Decision Log -->
-        <div class="card log-card">
-          <div class="log-header">
-            <h4>Algorithm Execution Trace & Step Log</h4>
-            <button id="clearLogBtn" class="btn-xs">Clear Log</button>
-          </div>
-          <div class="log-content" id="logContent">
-            <div class="log-entry info">System initialized with 1024 KB Main Memory (128 KB OS Kernel reserved). Ready for process allocation.</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4-Algorithm Comparison View Container -->
-      <div id="compareMapContainer" class="view-panel hidden">
-        <div class="compare-header">
-          <h2>Simultaneous 4-Algorithm Benchmark Arena</h2>
-          <p>Running First Fit, Best Fit, Worst Fit, and Next Fit concurrently on the exact same allocation queue.</p>
-        </div>
-
-        <div class="compare-grid">
-          <!-- First Fit Panel -->
-          <div class="compare-card" data-algo="first">
-            <div class="compare-card-header">
-              <h3>First Fit</h3>
-              <span class="compare-badge" id="badge-first">0/0 OK</span>
-            </div>
-            <div class="compare-metrics">
-              <div>Int Frag: <strong id="int-first">0 KB</strong></div>
-              <div>Ext Frag: <strong id="ext-first">0 KB</strong></div>
-              <div>Free: <strong id="free-first">896 KB</strong></div>
-            </div>
-            <div class="compare-track" id="track-first"></div>
-          </div>
-
-          <!-- Best Fit Panel -->
-          <div class="compare-card" data-algo="best">
-            <div class="compare-card-header">
-              <h3>Best Fit</h3>
-              <span class="compare-badge" id="badge-best">0/0 OK</span>
-            </div>
-            <div class="compare-metrics">
-              <div>Int Frag: <strong id="int-best">0 KB</strong></div>
-              <div>Ext Frag: <strong id="ext-best">0 KB</strong></div>
-              <div>Free: <strong id="free-best">896 KB</strong></div>
-            </div>
-            <div class="compare-track" id="track-best"></div>
-          </div>
-
-          <!-- Worst Fit Panel -->
-          <div class="compare-card" data-algo="worst">
-            <div class="compare-card-header">
-              <h3>Worst Fit</h3>
-              <span class="compare-badge" id="badge-worst">0/0 OK</span>
-            </div>
-            <div class="compare-metrics">
-              <div>Int Frag: <strong id="int-worst">0 KB</strong></div>
-              <div>Ext Frag: <strong id="ext-worst">0 KB</strong></div>
-              <div>Free: <strong id="free-worst">896 KB</strong></div>
-            </div>
-            <div class="compare-track" id="track-worst"></div>
-          </div>
-
-          <!-- Next Fit Panel -->
-          <div class="compare-card" data-algo="next">
-            <div class="compare-card-header">
-              <h3>Next Fit (Rotational)</h3>
-              <span class="compare-badge" id="badge-next">0/0 OK</span>
-            </div>
-            <div class="compare-metrics">
-              <div>Int Frag: <strong id="int-next">0 KB</strong></div>
-              <div>Ext Frag: <strong id="ext-next">0 KB</strong></div>
-              <div>Free: <strong id="free-next">896 KB</strong></div>
-            </div>
-            <div class="compare-track" id="track-next"></div>
-          </div>
-        </div>
-
-        <!-- Benchmark Comparison Table -->
-        <div class="card" style="margin-top:1rem;">
-          <h3>Final Algorithm Benchmark Comparison Table</h3>
-          <table class="compare-summary-table">
-            <thead>
-              <tr>
-                <th>Fit Algorithm</th>
-                <th>Success Rate</th>
-                <th>External Holes Count</th>
-                <th>Internal Frag (KB)</th>
-                <th>External Frag (KB)</th>
-                <th>Avg Search Steps</th>
-              </tr>
-            </thead>
-            <tbody id="compareSummaryTbody">
-              <tr><td colspan="6" style="color:var(--text-muted);">Run allocations to populate algorithm metrics...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+  <main id="app-viewport">
+    <!-- View content rendered dynamically -->
   </main>
 
-  <!-- Interactive Memory Block Inspection Modal / Tooltip Overlay -->
-  <div id="blockModal" class="modal-overlay hidden">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="modalTitle">Memory Block Details</h3>
-        <button id="closeModalBtn" class="close-btn">&times;</button>
-      </div>
-      <div class="modal-body" id="modalBody"></div>
-    </div>
-  </div>
-
-  <!-- Embedded All-In-One Advanced Memory Logic -->
   <script>
-    /* Advanced MemoryEngine with Step Tracing & Hole Count */
-    class MemoryEngine {
-      constructor(totalSize = 1024, osSize = 128) {
-        this.totalSize = totalSize;
-        this.osSize = osSize;
-        this.scheme = 'dynamic';
-        this.algorithm = 'first';
-        this.blocks = [];
-        this.nextFitPointer = osSize;
-        this.processes = [];
-        this.searchStepsCount = 0;
-        this.allocationStats = { totalRequested: 0, succeeded: 0, failed: 0, compactionCount: 0 };
-        this.initMemory();
+    // --- 1. DATA REPOSITORIES ---
+    const LAB_EXPERIMENTS = [
+      {
+        id: 'exp-1',
+        title: 'Experiment 1: First Fit Search Efficiency & Block Scanning',
+        objective: 'Investigate how First Fit selects the first available memory block from address 0 KB and measure search cost.',
+        scheme: 'dynamic',
+        algorithm: 'first',
+        actions: [
+          { type: 'allocate', id: 'P1', size: 150 },
+          { type: 'allocate', id: 'P2', size: 200 },
+          { type: 'allocate', id: 'P3', size: 100 },
+          { type: 'deallocate', id: 'P1' },
+          { type: 'allocate', id: 'P4', size: 120 }
+        ],
+        expectedConcept: 'First Fit always scans from the beginning of memory and allocates into the first hole large enough, ignoring larger holes downstream.',
+        observation: "Process P4 (120 KB) was placed into P1's freed hole (150 KB) because it was the first suitable block encountered.",
+        conclusion: 'First Fit minimizes search time for early allocations but tends to clutter low memory addresses with small residual fragments.'
+      },
+      {
+        id: 'exp-2',
+        title: 'Experiment 2: Best Fit Minimization of Residual Waste',
+        objective: 'Demonstrate how Best Fit scans all free holes to find the smallest hole that fits the request.',
+        scheme: 'dynamic',
+        algorithm: 'best',
+        actions: [
+          { type: 'allocate', id: 'P1', size: 100 },
+          { type: 'allocate', id: 'P2', size: 300 },
+          { type: 'allocate', id: 'P3', size: 100 },
+          { type: 'allocate', id: 'P4', size: 200 },
+          { type: 'deallocate', id: 'P2' },
+          { type: 'allocate', id: 'P5', size: 150 }
+        ],
+        expectedConcept: 'Best Fit evaluates all candidate holes and chooses the one that leaves the smallest residual leftover space.',
+        observation: 'Best Fit scanned both the 300 KB hole and high memory space, selecting the 300 KB hole to leave a 150 KB residual fragment.',
+        conclusion: 'Best Fit achieves tight memory packing but can create tiny unusable residual fragments over time.'
+      },
+      {
+        id: 'exp-3',
+        title: 'Experiment 3: Worst Fit Preservation of Large Reusable Holes',
+        objective: 'Observe how Worst Fit selects the largest available hole to keep the remaining fragment large enough for future processes.',
+        scheme: 'dynamic',
+        algorithm: 'worst',
+        actions: [
+          { type: 'allocate', id: 'P1', size: 100 },
+          { type: 'allocate', id: 'P2', size: 200 },
+          { type: 'allocate', id: 'P3', size: 100 },
+          { type: 'allocate', id: 'P4', size: 400 },
+          { type: 'deallocate', id: 'P2' },
+          { type: 'allocate', id: 'P5', size: 150 }
+        ],
+        expectedConcept: 'Worst Fit chooses the largest available hole, producing a large leftover fragment that remains usable.',
+        observation: 'Worst Fit placed P5 (150 KB) into the 400 KB hole instead of the 200 KB hole, leaving a large 250 KB usable fragment.',
+        conclusion: 'Worst Fit prevents the creation of tiny unusable fragments but rapidly consumes large contiguous holes.'
+      },
+      {
+        id: 'exp-4',
+        title: 'Experiment 4: Next Fit Rotational Pointer Search',
+        objective: 'Analyze Next Fit behavior by tracking search cursor position after consecutive allocations and deallocations.',
+        scheme: 'dynamic',
+        algorithm: 'next',
+        actions: [
+          { type: 'allocate', id: 'P1', size: 150 },
+          { type: 'allocate', id: 'P2', size: 150 },
+          { type: 'allocate', id: 'P3', size: 150 },
+          { type: 'deallocate', id: 'P1' },
+          { type: 'allocate', id: 'P4', size: 100 }
+        ],
+        expectedConcept: 'Next Fit continues searching from the last allocation address cursor rather than resetting to 0 KB.',
+        observation: "Even though P1 freed 150 KB at low memory, Next Fit allocated P4 at high memory past P3 because its cursor was at P3's end address.",
+        conclusion: 'Next Fit spreads allocations evenly across memory and reduces re-scanning low addresses.'
+      },
+      {
+        id: 'exp-5',
+        title: 'Experiment 5: External Fragmentation & Allocation Failure',
+        objective: 'Demonstrate the exact condition where Total Free Memory >= Process Size but no single contiguous block is large enough.',
+        scheme: 'dynamic',
+        algorithm: 'first',
+        actions: [
+          { type: 'allocate', id: 'P1', size: 180 },
+          { type: 'allocate', id: 'P2', size: 250 },
+          { type: 'allocate', id: 'P3', size: 180 },
+          { type: 'allocate', id: 'P4', size: 240 },
+          { type: 'deallocate', id: 'P2' },
+          { type: 'allocate', id: 'P5', size: 300 }
+        ],
+        expectedConcept: 'External fragmentation occurs when memory is fragmented into non-contiguous holes.',
+        observation: 'Total Free Memory was 450 KB (250 KB + 200 KB), but P5 (300 KB) failed because the largest hole was 250 KB.',
+        conclusion: 'A process cannot be allocated unless a single contiguous hole is at least as large as the request.'
+      },
+      {
+        id: 'exp-6',
+        title: 'Experiment 6: Memory Compaction & Defragmentation',
+        objective: 'Show how memory compaction slides active processes together to coalesce scattered free space into a single contiguous block.',
+        scheme: 'dynamic',
+        algorithm: 'first',
+        actions: [
+          { type: 'allocate', id: 'P1', size: 180 },
+          { type: 'allocate', id: 'P2', size: 250 },
+          { type: 'allocate', id: 'P3', size: 180 },
+          { type: 'deallocate', id: 'P2' },
+          { type: 'allocate', id: 'P4', size: 300 },
+          { type: 'compact', id: 'COMPACT' },
+          { type: 'allocate', id: 'P4', size: 300 }
+        ],
+        expectedConcept: 'Compaction relocates active processes toward low memory, merging all free fragments into one large block at high memory.',
+        observation: 'Before compaction P4 failed. After compaction, free space was consolidated into a 450 KB contiguous block, allowing P4 to allocate successfully.',
+        conclusion: 'Compaction resolves external fragmentation but requires CPU overhead and process relocation.'
+      },
+      {
+        id: 'exp-7',
+        title: 'Experiment 7: Comprehensive 4-Algorithm Benchmark',
+        objective: 'Compare First Fit, Best Fit, Worst Fit, and Next Fit on an identical process workload to evaluate memory utilization and search cost.',
+        scheme: 'dynamic',
+        algorithm: 'first',
+        actions: [
+          { type: 'allocate', id: 'P1', size: 200 },
+          { type: 'allocate', id: 'P2', size: 150 },
+          { type: 'allocate', id: 'P3', size: 250 },
+          { type: 'allocate', id: 'P4', size: 100 },
+          { type: 'deallocate', id: 'P2' },
+          { type: 'allocate', id: 'P5', size: 180 }
+        ],
+        expectedConcept: 'Different fit algorithms exhibit trade-offs between execution speed (search steps) and fragmentation.',
+        observation: 'Compare the memory map, external fragmentation, and search steps across all 4 algorithms in the Benchmark tab.',
+        conclusion: 'No single algorithm is optimal for all workloads; choice depends on process size distribution and lifetime.'
       }
+    ];
 
-      initMemory() {
-        this.blocks = [];
-        this.nextFitPointer = this.osSize;
-        this.processes = [];
-        this.searchStepsCount = 0;
-        this.allocationStats = { totalRequested: 0, succeeded: 0, failed: 0, compactionCount: 0 };
+    // --- 2. GLOBAL SIMULATION STATE ---
+    const state = {
+      activeTab: 'simulator',
+      totalMemory: 1024,
+      osSize: 128,
+      scheme: 'dynamic', // 'dynamic', 'fixed-equal'
+      algorithm: 'first', // 'first', 'best', 'worst', 'next'
+      nextFitPointer: 128,
+      blocks: [],
+      processes: [],
+      logs: ['[OS BOOT] MEMORYMAP PRO Engine initialized. 1024 KB RAM active.'],
+      lastAllocationFailedExtFrag: false,
+      lastFailedDetails: null,
+      searchStepsCount: 0,
+      totalRequested: 0,
+      succeeded: 0,
+      failed: 0,
 
-        this.blocks.push({
-          id: 'block-os',
-          startAddr: 0,
-          size: this.osSize,
-          type: 'os',
-          processId: 'Kernel OS',
-          reqSize: this.osSize,
+      // Benchmark specific state
+      benchmarkScenario: 'fragmented', // 'fragmented', 'basic', 'current-workload', 'random'
+      benchmarkStale: false,
+      benchmarkResults: null,
+      benchmarkActiveTraceAlgo: 'first',
+      benchmarkRunCount: 0,
+      lastBenchmarkRunTime: null,
+      benchmarkJustRan: false,
+
+      // Experiments state
+      selectedExpIndex: 0
+    };
+
+    // --- 3. CORE MEMORY ENGINE ---
+    function initMemory() {
+      state.blocks = [];
+      state.processes = [];
+      state.nextFitPointer = state.osSize;
+      state.searchStepsCount = 0;
+      state.totalRequested = 0;
+      state.succeeded = 0;
+      state.failed = 0;
+      state.lastAllocationFailedExtFrag = false;
+      state.lastFailedDetails = null;
+      state.benchmarkStale = true;
+
+      // OS Reserved Block
+      state.blocks.push({
+        id: 'block-os',
+        startAddr: 0,
+        endAddr: state.osSize,
+        size: state.osSize,
+        status: 'os',
+        processId: 'OS Kernel',
+        processName: 'OS Kernel',
+        reqSize: state.osSize,
+        internalFrag: 0
+      });
+
+      const userSpace = state.totalMemory - state.osSize;
+      if (state.scheme === 'dynamic') {
+        state.blocks.push({
+          id: 'block-free-0',
+          startAddr: state.osSize,
+          endAddr: state.totalMemory,
+          size: userSpace,
+          status: 'free',
           internalFrag: 0
         });
-
-        const userSpaceSize = this.totalSize - this.osSize;
-
-        if (this.scheme === 'dynamic') {
-          this.blocks.push({
-            id: 'block-free-0',
-            startAddr: this.osSize,
-            size: userSpaceSize,
-            type: 'free',
-            processId: null,
-            reqSize: 0,
-            internalFrag: 0
+      } else {
+        // Fixed Equal Partitions: 128 KB each
+        let addr = state.osSize;
+        let idx = 1;
+        while (addr + 128 <= state.totalMemory) {
+          state.blocks.push({
+            id: `part-${idx}`,
+            startAddr: addr,
+            endAddr: addr + 128,
+            size: 128,
+            status: 'free',
+            internalFrag: 0,
+            partitionId: `Partition ${idx} (128 KB)`
           });
-        } else if (this.scheme === 'fixed-equal') {
-          const partSize = 128;
-          let addr = this.osSize;
-          let partIdx = 1;
-          while (addr + partSize <= this.totalSize) {
-            this.blocks.push({
-              id: `part-${partIdx}`,
-              startAddr: addr,
-              size: partSize,
-              type: 'free',
-              processId: null,
-              reqSize: 0,
-              internalFrag: 0,
-              partitionId: `Partition ${partIdx} (${partSize}KB)`
-            });
-            addr += partSize;
-            partIdx++;
+          addr += 128;
+          idx++;
+        }
+      }
+    }
+
+    function getMetrics() {
+      let usedRam = 0;
+      let freeRam = 0;
+      let internalFrag = 0;
+      const freeHoles = [];
+
+      state.blocks.forEach(b => {
+        if (b.status === 'allocated') {
+          usedRam += (b.reqSize || b.size);
+          internalFrag += b.internalFrag;
+        } else if (b.status === 'free') {
+          freeRam += b.size;
+          freeHoles.push(b.size);
+        }
+      });
+
+      const availableRam = state.totalMemory - state.osSize;
+      const utilizationPct = availableRam > 0 ? Math.round((usedRam / availableRam) * 100) : 0;
+      const largestFreeBlock = freeHoles.length > 0 ? Math.max(...freeHoles) : 0;
+      const freeHolesCount = freeHoles.length;
+      const externalFrag = freeHolesCount > 1 ? freeRam : (state.scheme !== 'dynamic' ? freeRam : 0);
+      
+      const avgSearchSteps = state.totalRequested > 0 ? parseFloat((state.searchStepsCount / state.totalRequested).toFixed(1)) : 1.0;
+
+      return {
+        totalMemory: state.totalMemory,
+        osSize: state.osSize,
+        availableRam,
+        usedRam,
+        freeRam,
+        utilizationPct,
+        internalFrag,
+        externalFrag,
+        largestFreeBlock,
+        freeHolesCount,
+        succeeded: state.succeeded,
+        failed: state.failed,
+        totalRequested: state.totalRequested,
+        avgSearchSteps,
+        fragInducedFailure: state.lastAllocationFailedExtFrag
+      };
+    }
+
+    function allocateProcess(processId, reqSize, processName) {
+      state.totalRequested++;
+      state.benchmarkStale = true;
+      const name = processName || processId;
+
+      if (reqSize <= 0 || reqSize > (state.totalMemory - state.osSize)) {
+        state.failed++;
+        state.searchStepsCount += 1;
+        state.logs.push(`[SEARCH] ${processId} (${reqSize} KB) → Exceeds available RAM capacity.`);
+        state.logs.push(`[FAILED] Allocation rejected.`);
+        renderApp();
+        return false;
+      }
+
+      const freeHoles = [];
+      state.blocks.forEach((b, idx) => { if (b.status === 'free') freeHoles.push({ block: b, index: idx }); });
+
+      if (freeHoles.length === 0) {
+        state.failed++;
+        state.searchStepsCount += 1;
+        state.logs.push(`[SEARCH] ${processId} (${reqSize} KB) → Examined 0 free holes (RAM completely full).`);
+        state.logs.push(`[FAILED] Allocation rejected.`);
+        renderApp();
+        return false;
+      }
+
+      let blocksExamined = 0;
+      let chosenHole = null;
+
+      if (state.algorithm === 'first') {
+        state.logs.push(`[SEARCH] ${processId} (${reqSize} KB) → First Fit scanning holes from address ${state.osSize} KB...`);
+        for (let i = 0; i < freeHoles.length; i++) {
+          blocksExamined++;
+          const h = freeHoles[i];
+          if (h.block.size >= reqSize) {
+            chosenHole = h;
+            state.logs.push(`  └─ [CHECK] Hole #${i+1} at ${h.block.startAddr} KB (${h.block.size} KB): FIT FOUND!`);
+            break;
+          } else {
+            state.logs.push(`  └─ [CHECK] Hole #${i+1} at ${h.block.startAddr} KB (${h.block.size} KB): Too small.`);
           }
-        } else if (this.scheme === 'fixed-unequal') {
-          const partSizes = [64, 128, 256, 448];
-          let addr = this.osSize;
-          partSizes.forEach((partSize, idx) => {
-            if (addr + partSize <= this.totalSize) {
-              this.blocks.push({
-                id: `part-${idx + 1}`,
-                startAddr: addr,
-                size: partSize,
-                type: 'free',
-                processId: null,
-                reqSize: 0,
-                internalFrag: 0,
-                partitionId: `Partition ${idx + 1} (${partSize}KB)`
-              });
-              addr += partSize;
+        }
+      } else if (state.algorithm === 'best') {
+        state.logs.push(`[SEARCH] ${processId} (${reqSize} KB) → Best Fit evaluating all ${freeHoles.length} holes for minimal waste...`);
+        const candidateHoles = [];
+        freeHoles.forEach((h, idx) => {
+          blocksExamined++;
+          if (h.block.size >= reqSize) {
+            candidateHoles.push(h);
+            state.logs.push(`  └─ [CHECK] Hole #${idx+1} at ${h.block.startAddr} KB (${h.block.size} KB): Candidate (Residual: ${h.block.size - reqSize} KB)`);
+          } else {
+            state.logs.push(`  └─ [CHECK] Hole #${idx+1} at ${h.block.startAddr} KB (${h.block.size} KB): Too small.`);
+          }
+        });
+        if (candidateHoles.length > 0) {
+          candidateHoles.sort((a, b) => a.block.size - b.block.size);
+          chosenHole = candidateHoles[0];
+          state.logs.push(`[SELECT] Best Fit selected hole at ${chosenHole.block.startAddr} KB (${chosenHole.block.size} KB, Residual waste: ${chosenHole.block.size - reqSize} KB).`);
+        }
+      } else if (state.algorithm === 'worst') {
+        state.logs.push(`[SEARCH] ${processId} (${reqSize} KB) → Worst Fit evaluating all ${freeHoles.length} holes for maximum remaining space...`);
+        const candidateHoles = [];
+        freeHoles.forEach((h, idx) => {
+          blocksExamined++;
+          if (h.block.size >= reqSize) {
+            candidateHoles.push(h);
+            state.logs.push(`  └─ [CHECK] Hole #${idx+1} at ${h.block.startAddr} KB (${h.block.size} KB): Candidate (Remaining: ${h.block.size - reqSize} KB)`);
+          } else {
+            state.logs.push(`  └─ [CHECK] Hole #${idx+1} at ${h.block.startAddr} KB (${h.block.size} KB): Too small.`);
+          }
+        });
+        if (candidateHoles.length > 0) {
+          candidateHoles.sort((a, b) => b.block.size - a.block.size);
+          chosenHole = candidateHoles[0];
+          state.logs.push(`[SELECT] Worst Fit selected hole at ${chosenHole.block.startAddr} KB (${chosenHole.block.size} KB, Remaining waste: ${chosenHole.block.size - reqSize} KB).`);
+        }
+      } else if (state.algorithm === 'next') {
+        state.logs.push(`[SEARCH] ${processId} (${reqSize} KB) → Next Fit scanning starting from cursor ${state.nextFitPointer} KB...`);
+        for (let i = 0; i < freeHoles.length; i++) {
+          const h = freeHoles[i];
+          if (h.block.startAddr >= state.nextFitPointer) {
+            blocksExamined++;
+            if (h.block.size >= reqSize) {
+              chosenHole = h;
+              state.logs.push(`  └─ [CHECK] Hole at ${h.block.startAddr} KB (${h.block.size} KB) past cursor: FIT FOUND!`);
+              break;
+            } else {
+              state.logs.push(`  └─ [CHECK] Hole at ${h.block.startAddr} KB (${h.block.size} KB) past cursor: Too small.`);
             }
-          });
-        }
-      }
-
-      setConfiguration(scheme, algorithm) {
-        this.scheme = scheme;
-        this.algorithm = algorithm;
-        this.initMemory();
-      }
-
-      allocate(processId, reqSize) {
-        this.allocationStats.totalRequested++;
-
-        if (reqSize <= 0 || reqSize > (this.totalSize - this.osSize)) {
-          this.allocationStats.failed++;
-          return {
-            success: false,
-            reason: `Process size ${reqSize} KB exceeds total user space!`,
-            logs: [`Process ${processId} (${reqSize} KB) exceeds maximum RAM capacity (896 KB).`]
-          };
-        }
-
-        if (this.scheme === 'dynamic') {
-          return this._allocateDynamic(processId, reqSize);
-        } else {
-          return this._allocateFixed(processId, reqSize);
-        }
-      }
-
-      _allocateDynamic(processId, reqSize) {
-        const logs = [];
-        const freeHoles = [];
-
-        this.blocks.forEach((block, index) => {
-          if (block.type === 'free') {
-            freeHoles.push({ block, index });
           }
+        }
+        if (!chosenHole) {
+          state.logs.push(`  └─ [WRAP] Reached memory end. Wrapping search around to address ${state.osSize} KB...`);
+          for (let i = 0; i < freeHoles.length; i++) {
+            const h = freeHoles[i];
+            if (h.block.startAddr < state.nextFitPointer) {
+              blocksExamined++;
+              if (h.block.size >= reqSize) {
+                chosenHole = h;
+                state.logs.push(`  └─ [CHECK] Wrapped hole at ${h.block.startAddr} KB (${h.block.size} KB): FIT FOUND!`);
+                break;
+              } else {
+                state.logs.push(`  └─ [CHECK] Wrapped hole at ${h.block.startAddr} KB (${h.block.size} KB): Too small.`);
+              }
+            }
+          }
+        }
+      }
+
+      state.searchStepsCount += blocksExamined;
+      state.logs.push(`[SEARCH STATS] Holes examined: ${blocksExamined}`);
+
+      if (!chosenHole) {
+        const metrics = getMetrics();
+        state.failed++;
+        
+        const isExtFragFailure = (metrics.freeRam >= reqSize) && (metrics.largestFreeBlock < reqSize);
+        state.lastAllocationFailedExtFrag = isExtFragFailure;
+        state.lastFailedDetails = {
+          reqSize,
+          freeRam: metrics.freeRam,
+          largestFreeBlock: metrics.largestFreeBlock,
+          freeHolesCount: metrics.freeHolesCount,
+          isExtFrag: isExtFragFailure
+        };
+
+        if (isExtFragFailure) {
+          state.logs.push(`🚨 [EXTERNAL FRAGMENTATION FAILURE] Process ${processId} (${reqSize} KB) failed.`);
+          state.logs.push(`  Required: ${reqSize} KB | Total Free RAM: ${metrics.freeRam} KB | Largest Contiguous Hole: ${metrics.largestFreeBlock} KB`);
+          state.logs.push(`  Reason: Enough total free memory exists, but no single contiguous hole is large enough.`);
+        } else {
+          state.logs.push(`🚨 [INSUFFICIENT RAM] Total Free RAM (${metrics.freeRam} KB) is strictly less than required size (${reqSize} KB).`);
+        }
+        renderApp();
+        return false;
+      }
+
+      const targetBlock = chosenHole.block;
+      const targetIndex = state.blocks.indexOf(targetBlock);
+      const internalFrag = state.scheme !== 'dynamic' ? (targetBlock.size - reqSize) : 0;
+
+      const allocatedBlock = {
+        id: `block-proc-${processId}-${Date.now()}`,
+        startAddr: targetBlock.startAddr,
+        endAddr: state.scheme === 'dynamic' ? (targetBlock.startAddr + reqSize) : targetBlock.endAddr,
+        size: state.scheme === 'dynamic' ? reqSize : targetBlock.size,
+        status: 'allocated',
+        processId,
+        processName: name,
+        reqSize,
+        internalFrag
+      };
+
+      const remainingSize = targetBlock.size - reqSize;
+      if (remainingSize > 0 && state.scheme === 'dynamic') {
+        const splitFreeBlock = {
+          id: `block-free-${Date.now()}`,
+          startAddr: targetBlock.startAddr + reqSize,
+          endAddr: targetBlock.endAddr,
+          size: remainingSize,
+          status: 'free',
+          internalFrag: 0
+        };
+        state.blocks.splice(targetIndex, 1, allocatedBlock, splitFreeBlock);
+      } else {
+        state.blocks.splice(targetIndex, 1, allocatedBlock);
+      }
+
+      state.nextFitPointer = (allocatedBlock.endAddr) % state.totalMemory;
+      if (state.nextFitPointer < state.osSize) state.nextFitPointer = state.osSize;
+
+      state.succeeded++;
+      state.processes.push({ id: processId, name, reqSize, status: 'allocated', internalFrag });
+      state.logs.push(`[SUCCESS] Allocated ${processId} (${reqSize} KB) at physical address range ${allocatedBlock.startAddr} KB — ${allocatedBlock.endAddr} KB.`);
+      state.lastAllocationFailedExtFrag = false;
+      state.lastFailedDetails = null;
+
+      renderApp();
+      return true;
+    }
+
+    function deallocateProcess(processId) {
+      state.benchmarkStale = true;
+      let found = false;
+      state.blocks.forEach(b => {
+        if (b.status === 'allocated' && b.processId === processId) {
+          b.status = 'free';
+          b.processId = undefined;
+          b.processName = undefined;
+          b.reqSize = 0;
+          b.internalFrag = 0;
+          found = true;
+          state.logs.push(`[FREE] Deallocated process ${processId} at range ${b.startAddr} — ${b.endAddr} KB.`);
+        }
+      });
+
+      if (found) {
+        mergeAdjacentFreeBlocks();
+        state.processes = state.processes.filter(p => p.id !== processId);
+      }
+      renderApp();
+    }
+
+    function mergeAdjacentFreeBlocks() {
+      if (state.scheme !== 'dynamic') return;
+      let i = 0;
+      let merged = 0;
+      while (i < state.blocks.length - 1) {
+        const curr = state.blocks[i];
+        const next = state.blocks[i + 1];
+        if (curr.status === 'free' && next.status === 'free') {
+          curr.size += next.size;
+          curr.endAddr = next.endAddr;
+          state.blocks.splice(i + 1, 1);
+          merged++;
+        } else {
+          i++;
+        }
+      }
+      if (merged > 0) {
+        state.logs.push(`[COALESCING] Automatically merged ${merged + 1} adjacent free blocks into a single contiguous hole.`);
+      }
+    }
+
+    function compactMemory() {
+      if (state.scheme !== 'dynamic') return;
+      state.benchmarkStale = true;
+      const osBlock = state.blocks[0];
+      const allocatedBlocks = state.blocks.filter(b => b.status === 'allocated');
+      let currentAddr = state.osSize;
+      const newBlocks = [osBlock];
+
+      allocatedBlocks.forEach(b => {
+        b.startAddr = currentAddr;
+        b.endAddr = currentAddr + b.size;
+        currentAddr += b.size;
+        newBlocks.push(b);
+      });
+
+      const totalFreeSize = state.totalMemory - currentAddr;
+      if (totalFreeSize > 0) {
+        newBlocks.push({
+          id: `block-free-compact-${Date.now()}`,
+          startAddr: currentAddr,
+          endAddr: state.totalMemory,
+          size: totalFreeSize,
+          status: 'free',
+          internalFrag: 0
+        });
+      }
+
+      state.blocks = newBlocks;
+      state.nextFitPointer = currentAddr % state.totalMemory;
+      if (state.nextFitPointer < state.osSize) state.nextFitPointer = state.osSize;
+      state.lastAllocationFailedExtFrag = false;
+      state.lastFailedDetails = null;
+      state.logs.push(`[COMPACTION] Relocated ${allocatedBlocks.length} processes down to low memory. Consolidated ${totalFreeSize} KB free space into a single contiguous hole at high memory.`);
+      renderApp();
+    }
+
+    function resetState() {
+      initMemory();
+      state.logs = ['[RESET] Simulator reset to clean default state.'];
+      renderApp();
+    }
+
+    function triggerRandomScenario() {
+      resetState();
+      [180, 250, 180, 240].forEach((sz, i) => allocateProcess(`P${i+1}`, sz));
+    }
+
+    function toggleDemoMode() {
+      triggerRandomScenario();
+      switchTab('simulator');
+    }
+
+    function switchTab(tabName) {
+      state.activeTab = tabName;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+      if (activeBtn) activeBtn.classList.add('active');
+      if (tabName === 'benchmark' && (!state.benchmarkResults || state.benchmarkStale)) {
+        runBenchmark();
+        return;
+      }
+      renderApp();
+    }
+
+    // --- 4. BENCHMARK ENGINE CORE ---
+    function getBenchmarkScenarioDefinition(scenarioKey) {
+      if (scenarioKey === 'fragmented') {
+        const initialBlocks = [
+          { id: 'b-os', startAddr: 0, endAddr: 128, size: 128, status: 'os', processId: 'OS Kernel', reqSize: 128, internalFrag: 0 },
+          { id: 'b-p1', startAddr: 128, endAddr: 228, size: 100, status: 'allocated', processId: 'P1', reqSize: 100, internalFrag: 0 },
+          { id: 'b-h1', startAddr: 228, endAddr: 348, size: 120, status: 'free', internalFrag: 0 },
+          { id: 'b-p2', startAddr: 348, endAddr: 498, size: 150, status: 'allocated', processId: 'P2', reqSize: 150, internalFrag: 0 },
+          { id: 'b-h2', startAddr: 498, endAddr: 748, size: 250, status: 'free', internalFrag: 0 },
+          { id: 'b-p3', startAddr: 748, endAddr: 848, size: 100, status: 'allocated', processId: 'P3', reqSize: 100, internalFrag: 0 },
+          { id: 'b-h3', startAddr: 848, endAddr: 1024, size: 176, status: 'free', internalFrag: 0 }
+        ];
+
+        const workload = [
+          { id: 'P4', size: 110, name: 'Process 4' },
+          { id: 'P5', size: 170, name: 'Process 5' },
+          { id: 'P6', size: 220, name: 'Process 6' },
+          { id: 'P7', size: 130, name: 'Process 7' }
+        ];
+
+        return {
+          key: 'fragmented',
+          name: 'Fragmentation Benchmark Scenario (Multiple Diverse Holes: 120 KB, 250 KB, 176 KB)',
+          description: 'Initial memory contains 3 non-contiguous holes (120 KB, 250 KB, 176 KB). Clearly demonstrates how First, Best, Worst, and Next Fit make fundamentally different placement decisions and reveals external fragmentation failure.',
+          initialBlocks,
+          initialPointer: 128,
+          workload
+        };
+      } else if (scenarioKey === 'basic') {
+        const initialBlocks = [
+          { id: 'b-os', startAddr: 0, endAddr: 128, size: 128, status: 'os', processId: 'OS Kernel', reqSize: 128, internalFrag: 0 },
+          { id: 'b-free', startAddr: 128, endAddr: 1024, size: 896, status: 'free', internalFrag: 0 }
+        ];
+
+        const workload = [
+          { id: 'P1', size: 180, name: 'Process 1' },
+          { id: 'P2', size: 250, name: 'Process 2' },
+          { id: 'P3', size: 180, name: 'Process 3' },
+          { id: 'P4', size: 240, name: 'Process 4' }
+        ];
+
+        return {
+          key: 'basic',
+          name: 'Basic Sequential Scenario (Single 896 KB Hole)',
+          description: 'Single continuous free hole after OS Kernel. Demonstrates basic sequential placement across a clean address space.',
+          initialBlocks,
+          initialPointer: 128,
+          workload
+        };
+      } else if (scenarioKey === 'current-workload') {
+        // Evaluate the simulator's active processes on identical clean initial RAM
+        const initialBlocks = [
+          { id: 'b-os', startAddr: 0, endAddr: state.osSize, size: state.osSize, status: 'os', processId: 'OS Kernel', reqSize: state.osSize, internalFrag: 0 },
+          { id: 'b-free', startAddr: state.osSize, endAddr: state.totalMemory, size: state.totalMemory - state.osSize, status: 'free', internalFrag: 0 }
+        ];
+
+        const workload = state.processes.length > 0
+          ? state.processes.map(p => ({ id: p.id, size: p.reqSize, name: p.name || p.id }))
+          : [
+              { id: 'P1', size: 160, name: 'Process 1' },
+              { id: 'P2', size: 240, name: 'Process 2' },
+              { id: 'P3', size: 180, name: 'Process 3' },
+              { id: 'P4', size: 220, name: 'Process 4' }
+            ];
+
+        return {
+          key: 'current-workload',
+          name: 'Live Simulator Workload Comparison Scenario',
+          description: `Simulates the exact process workload from your live simulator (${workload.length} processes) across all 4 algorithms on identical clean initial memory.`,
+          initialBlocks,
+          initialPointer: state.osSize,
+          workload
+        };
+      } else {
+        const initialBlocks = [
+          { id: 'b-os', startAddr: 0, endAddr: 128, size: 128, status: 'os', processId: 'OS Kernel', reqSize: 128, internalFrag: 0 },
+          { id: 'b-p1', startAddr: 128, endAddr: 268, size: 140, status: 'allocated', processId: 'P1', reqSize: 140, internalFrag: 0 },
+          { id: 'b-h1', startAddr: 268, endAddr: 418, size: 150, status: 'free', internalFrag: 0 },
+          { id: 'b-p2', startAddr: 418, endAddr: 598, size: 180, status: 'allocated', processId: 'P2', reqSize: 180, internalFrag: 0 },
+          { id: 'b-h2', startAddr: 598, endAddr: 898, size: 300, status: 'free', internalFrag: 0 },
+          { id: 'b-h3', startAddr: 898, endAddr: 1024, size: 126, status: 'free', internalFrag: 0 }
+        ];
+
+        const workload = [
+          { id: 'PR1', size: 130, name: 'Random 1' },
+          { id: 'PR2', size: 190, name: 'Random 2' },
+          { id: 'PR3', size: 260, name: 'Random 3' }
+        ];
+
+        return {
+          key: 'random',
+          name: 'Random Multi-Hole Workload Scenario',
+          description: 'Evaluates randomized process sizes against multi-hole memory distribution.',
+          initialBlocks,
+          initialPointer: 128,
+          workload
+        };
+      }
+    }
+
+    function runSingleAlgorithmBenchmark(algoId, scenarioDef) {
+      const blocks = JSON.parse(JSON.stringify(scenarioDef.initialBlocks));
+      const workload = scenarioDef.workload;
+      let nextFitPointer = scenarioDef.initialPointer;
+      
+      let totalSearchSteps = 0;
+      let totalRequests = workload.length;
+      let successfulAllocations = 0;
+      let failedAllocations = 0;
+      let fragFailures = 0;
+      const traceLogs = [];
+
+      traceLogs.push(`=== ${algoId.toUpperCase()} FIT INDEPENDENT BENCHMARK RUN ===`);
+      traceLogs.push(`[INIT] Cloned initial memory with ${blocks.length} blocks. Workload: ${workload.length} processes.`);
+
+      workload.forEach((proc, pIdx) => {
+        traceLogs.push(`\n[SEARCH] Process ${proc.id} requires ${proc.size} KB`);
+        
+        const freeHoles = [];
+        blocks.forEach((b, idx) => {
+          if (b.status === 'free') freeHoles.push({ block: b, index: idx });
         });
 
         if (freeHoles.length === 0) {
-          this.allocationStats.failed++;
-          return {
-            success: false,
-            reason: 'No free memory holes available.',
-            logs: [`[FAILED] ${processId} (${reqSize} KB): Zero free memory holes remaining.`]
-          };
+          failedAllocations++;
+          totalSearchSteps += 1;
+          traceLogs.push(`[CHECK] 0 free holes available (Memory completely full).`);
+          traceLogs.push(`[FAILED] Process ${proc.id} allocation rejected.`);
+          return;
         }
 
-        const candidateHoles = freeHoles.filter(h => h.block.size >= reqSize);
-
-        if (candidateHoles.length === 0) {
-          const totalFree = this.getMetrics().freeRam;
-          const holesCount = freeHoles.length;
-          this.allocationStats.failed++;
-          logs.push(`🚨 [EXTERNAL FRAGMENTATION FAILURE] Process ${processId} (${reqSize} KB) requested.`);
-          logs.push(`Total free RAM is ${totalFree} KB across ${holesCount} holes, but largest single hole is only ${Math.max(...freeHoles.map(h=>h.block.size))} KB!`);
-          return {
-            success: false,
-            reason: `External Fragmentation! Total free RAM is ${totalFree} KB across ${holesCount} holes, but no single hole >= ${reqSize} KB exists.`,
-            externalFragDetected: true,
-            freeHolesCount: holesCount,
-            totalFree,
-            failedReqSize: reqSize,
-            logs
-          };
-        }
-
+        let stepsForProc = 0;
         let chosenHole = null;
 
-        if (this.algorithm === 'first') {
-          logs.push(`[FIRST FIT TRACE] Scanning memory holes from address 0x${this.osSize.toString(16).padStart(4,'0')}...`);
+        if (algoId === 'first') {
           for (let i = 0; i < freeHoles.length; i++) {
-            this.searchStepsCount++;
+            stepsForProc++;
             const h = freeHoles[i];
-            const hex = '0x' + h.block.startAddr.toString(16).padStart(4, '0');
-            if (h.block.size >= reqSize) {
-              logs.push(`  └─ Hole #${i+1} at ${hex} (${h.block.size} KB): FIT FOUND! Selected first matching hole.`);
+            if (h.block.size >= proc.size) {
               chosenHole = h;
+              traceLogs.push(`[CHECK] Hole #${i+1} at ${h.block.startAddr} KB (${h.block.size} KB) → FIT FOUND (First match)!`);
               break;
             } else {
-              logs.push(`  └─ Hole #${i+1} at ${hex} (${h.block.size} KB): Skipped (Too small for ${reqSize} KB).`);
+              traceLogs.push(`[CHECK] Hole #${i+1} at ${h.block.startAddr} KB (${h.block.size} KB) → TOO SMALL`);
             }
           }
-        } else if (this.algorithm === 'best') {
-          logs.push(`[BEST FIT TRACE] Scanning all ${freeHoles.length} free holes to minimize residual waste...`);
-          candidateHoles.sort((a, b) => a.block.size - b.block.size);
-          
-          freeHoles.forEach((h, idx) => {
-            this.searchStepsCount++;
-            const hex = '0x' + h.block.startAddr.toString(16).padStart(4, '0');
-            if (h.block.size >= reqSize) {
-              const waste = h.block.size - reqSize;
-              logs.push(`  └─ Hole #${idx+1} at ${hex} (${h.block.size} KB): Fits! Residual fragment: ${waste} KB.`);
+        } else if (algoId === 'best') {
+          const candidates = [];
+          freeHoles.forEach((h, i) => {
+            stepsForProc++;
+            if (h.block.size >= proc.size) {
+              candidates.push(h);
+              traceLogs.push(`[CHECK] Hole #${i+1} at ${h.block.startAddr} KB (${h.block.size} KB) → CANDIDATE (Residual: ${h.block.size - proc.size} KB)`);
             } else {
-              logs.push(`  └─ Hole #${idx+1} at ${hex} (${h.block.size} KB): Too small.`);
+              traceLogs.push(`[CHECK] Hole #${i+1} at ${h.block.startAddr} KB (${h.block.size} KB) → TOO SMALL`);
             }
           });
 
-          chosenHole = candidateHoles[0];
-          logs.push(`  👉 Selected smallest sufficient hole at 0x${chosenHole.block.startAddr.toString(16).padStart(4, '0')} (${chosenHole.block.size} KB, Min waste: ${chosenHole.block.size - reqSize} KB).`);
-        } else if (this.algorithm === 'worst') {
-          logs.push(`[WORST FIT TRACE] Scanning all ${freeHoles.length} free holes to maximize residual fragment size...`);
-          candidateHoles.sort((a, b) => b.block.size - a.block.size);
-
-          freeHoles.forEach((h, idx) => {
-            this.searchStepsCount++;
-            const hex = '0x' + h.block.startAddr.toString(16).padStart(4, '0');
-            if (h.block.size >= reqSize) {
-              const waste = h.block.size - reqSize;
-              logs.push(`  └─ Hole #${idx+1} at ${hex} (${h.block.size} KB): Fits! Residual fragment: ${waste} KB.`);
+          if (candidates.length > 0) {
+            candidates.sort((a, b) => a.block.size - b.block.size);
+            chosenHole = candidates[0];
+            traceLogs.push(`[SELECT] Best Fit selected hole at ${chosenHole.block.startAddr} KB (${chosenHole.block.size} KB, Residual waste: ${chosenHole.block.size - proc.size} KB)`);
+          }
+        } else if (algoId === 'worst') {
+          const candidates = [];
+          freeHoles.forEach((h, i) => {
+            stepsForProc++;
+            if (h.block.size >= proc.size) {
+              candidates.push(h);
+              traceLogs.push(`[CHECK] Hole #${i+1} at ${h.block.startAddr} KB (${h.block.size} KB) → CANDIDATE (Remaining: ${h.block.size - proc.size} KB)`);
             } else {
-              logs.push(`  └─ Hole #${idx+1} at ${hex} (${h.block.size} KB): Too small.`);
+              traceLogs.push(`[CHECK] Hole #${i+1} at ${h.block.startAddr} KB (${h.block.size} KB) → TOO SMALL`);
             }
           });
 
-          chosenHole = candidateHoles[0];
-          logs.push(`  👉 Selected largest hole at 0x${chosenHole.block.startAddr.toString(16).padStart(4, '0')} (${chosenHole.block.size} KB, Max waste: ${chosenHole.block.size - reqSize} KB).`);
-        } else if (this.algorithm === 'next') {
-          const ptrHex = '0x' + this.nextFitPointer.toString(16).padStart(4, '0');
-          logs.push(`[NEXT FIT TRACE] Scanning starting from search cursor position ${ptrHex}...`);
-          
-          let found = null;
-          for (const h of freeHoles) {
-            this.searchStepsCount++;
-            if (h.block.startAddr >= this.nextFitPointer && h.block.size >= reqSize) {
-              found = h;
-              logs.push(`  └─ Found hole past cursor at 0x${h.block.startAddr.toString(16).padStart(4, '0')} (${h.block.size} KB). FIT FOUND!`);
-              break;
-            }
+          if (candidates.length > 0) {
+            candidates.sort((a, b) => b.block.size - a.block.size);
+            chosenHole = candidates[0];
+            traceLogs.push(`[SELECT] Worst Fit selected hole at ${chosenHole.block.startAddr} KB (${chosenHole.block.size} KB, Remaining waste: ${chosenHole.block.size - proc.size} KB)`);
           }
-          if (!found) {
-            logs.push(`  └─ Reached top memory bounds. Wrapping around to 0x0080...`);
-            for (const h of freeHoles) {
-              this.searchStepsCount++;
-              if (h.block.startAddr < this.nextFitPointer && h.block.size >= reqSize) {
-                found = h;
-                logs.push(`  └─ Wrapped hole found at 0x${h.block.startAddr.toString(16).padStart(4, '0')} (${h.block.size} KB). FIT FOUND!`);
+        } else if (algoId === 'next') {
+          traceLogs.push(`[CURSOR] Starting scan from Next-Fit pointer: ${nextFitPointer} KB`);
+          for (let i = 0; i < freeHoles.length; i++) {
+            const h = freeHoles[i];
+            if (h.block.startAddr >= nextFitPointer) {
+              stepsForProc++;
+              if (h.block.size >= proc.size) {
+                chosenHole = h;
+                traceLogs.push(`[CHECK] Hole at ${h.block.startAddr} KB (${h.block.size} KB) past cursor → FIT FOUND!`);
                 break;
+              } else {
+                traceLogs.push(`[CHECK] Hole at ${h.block.startAddr} KB (${h.block.size} KB) past cursor → TOO SMALL`);
               }
             }
           }
-          chosenHole = found || candidateHoles[0];
-        } else if (this.algorithm === 'quick') {
-          candidateHoles.sort((a, b) => a.block.size - b.block.size);
-          chosenHole = candidateHoles[0];
-          this.searchStepsCount++;
-          logs.push(`[QUICK FIT TRACE] Indexed size bucket hit at 0x${chosenHole.block.startAddr.toString(16).padStart(4, '0')} (${chosenHole.block.size} KB).`);
+
+          if (!chosenHole) {
+            traceLogs.push(`[WRAP] Search wrapped around to memory start...`);
+            for (let i = 0; i < freeHoles.length; i++) {
+              const h = freeHoles[i];
+              if (h.block.startAddr < nextFitPointer) {
+                stepsForProc++;
+                if (h.block.size >= proc.size) {
+                  chosenHole = h;
+                  traceLogs.push(`[CHECK] Wrapped hole at ${h.block.startAddr} KB (${h.block.size} KB) → FIT FOUND!`);
+                  break;
+                } else {
+                  traceLogs.push(`[CHECK] Wrapped hole at ${h.block.startAddr} KB (${h.block.size} KB) → TOO SMALL`);
+                }
+              }
+            }
+          }
         }
 
-        const targetBlock = chosenHole.block;
-        const targetIndex = this.blocks.indexOf(targetBlock);
+        totalSearchSteps += stepsForProc;
+        traceLogs.push(`[SEARCH STATS] Holes examined: ${stepsForProc}`);
 
-        const allocatedBlock = {
-          id: `proc-${processId}-${Date.now()}`,
-          startAddr: targetBlock.startAddr,
-          size: reqSize,
-          type: 'allocated',
-          processId: processId,
-          reqSize: reqSize,
-          internalFrag: 0
-        };
+        if (chosenHole) {
+          const targetBlock = chosenHole.block;
+          const targetIndex = blocks.indexOf(targetBlock);
 
-        const remainingSize = targetBlock.size - reqSize;
-
-        if (remainingSize > 0) {
-          const splitFreeBlock = {
-            id: `block-free-${Date.now()}`,
-            startAddr: targetBlock.startAddr + reqSize,
-            size: remainingSize,
-            type: 'free',
-            processId: null,
-            reqSize: 0,
+          const allocatedBlock = {
+            id: `b-${algoId}-${proc.id}`,
+            startAddr: targetBlock.startAddr,
+            endAddr: targetBlock.startAddr + proc.size,
+            size: proc.size,
+            status: 'allocated',
+            processId: proc.id,
+            processName: proc.name,
+            reqSize: proc.size,
             internalFrag: 0
           };
-          this.blocks.splice(targetIndex, 1, allocatedBlock, splitFreeBlock);
-        } else {
-          this.blocks.splice(targetIndex, 1, allocatedBlock);
-        }
 
-        this.nextFitPointer = (allocatedBlock.startAddr + allocatedBlock.size) % this.totalSize;
-        if (this.nextFitPointer < this.osSize) this.nextFitPointer = this.osSize;
-
-        this.allocationStats.succeeded++;
-        this.processes.push({ id: processId, size: reqSize, startAddr: allocatedBlock.startAddr });
-
-        logs.push(`[SUCCESS] Allocated ${processId} (${reqSize} KB) at address 0x${allocatedBlock.startAddr.toString(16).padStart(4, '0')}.`);
-
-        return { success: true, block: allocatedBlock, logs };
-      }
-
-      _allocateFixed(processId, reqSize) {
-        const logs = [];
-        const freePartitions = [];
-
-        this.blocks.forEach((block, index) => {
-          if (block.type === 'free') {
-            freePartitions.push({ block, index });
-          }
-        });
-
-        const candidatePartitions = freePartitions.filter(p => p.block.size >= reqSize);
-
-        if (candidatePartitions.length === 0) {
-          this.allocationStats.failed++;
-          logs.push(`[FAILED/EXTERNAL FRAG] ${processId} (${reqSize} KB) is too large for any free partition!`);
-          return {
-            success: false,
-            reason: `No free partition large enough for process ${processId} (${reqSize} KB).`,
-            logs
-          };
-        }
-
-        let chosenPart = null;
-
-        if (this.algorithm === 'first') {
-          chosenPart = candidatePartitions[0];
-          logs.push(`[FIRST FIT] Selected partition ${chosenPart.block.partitionId}.`);
-        } else if (this.algorithm === 'best' || this.algorithm === 'quick') {
-          candidatePartitions.sort((a, b) => a.block.size - b.block.size);
-          chosenPart = candidatePartitions[0];
-          logs.push(`[BEST FIT] Selected partition ${chosenPart.block.partitionId} (Min internal frag: ${chosenPart.block.size - reqSize} KB).`);
-        } else if (this.algorithm === 'worst') {
-          candidatePartitions.sort((a, b) => b.block.size - a.block.size);
-          chosenPart = candidatePartitions[0];
-          logs.push(`[WORST FIT] Selected partition ${chosenPart.block.partitionId} (Max internal frag: ${chosenPart.block.size - reqSize} KB).`);
-        } else if (this.algorithm === 'next') {
-          let found = null;
-          for (const p of freePartitions) {
-            if (p.block.startAddr >= this.nextFitPointer && p.block.size >= reqSize) {
-              found = p;
-              break;
-            }
-          }
-          if (!found) {
-            for (const p of freePartitions) {
-              if (p.block.startAddr < this.nextFitPointer && p.block.size >= reqSize) {
-                found = p;
-                break;
-              }
-            }
-          }
-          chosenPart = found || candidatePartitions[0];
-        }
-
-        const pBlock = chosenPart.block;
-        const internalWaste = pBlock.size - reqSize;
-
-        pBlock.type = 'allocated';
-        pBlock.processId = processId;
-        pBlock.reqSize = reqSize;
-        pBlock.internalFrag = internalWaste;
-
-        this.nextFitPointer = (pBlock.startAddr + pBlock.size) % this.totalSize;
-        if (this.nextFitPointer < this.osSize) this.nextFitPointer = this.osSize;
-
-        this.allocationStats.succeeded++;
-        this.processes.push({ id: processId, size: reqSize, startAddr: pBlock.startAddr });
-
-        logs.push(`[SUCCESS] Allocated ${processId} (${reqSize} KB) in ${pBlock.partitionId}. Internal Frag: ${internalWaste} KB.`);
-
-        return { success: true, block: pBlock, internalFrag: internalWaste, logs };
-      }
-
-      deallocate(processId) {
-        const logs = [];
-        let found = false;
-
-        if (this.scheme === 'dynamic') {
-          this.blocks.forEach(block => {
-            if (block.type === 'allocated' && block.processId === processId) {
-              block.type = 'free';
-              block.processId = null;
-              block.reqSize = 0;
-              block.internalFrag = 0;
-              found = true;
-              logs.push(`Deallocated process ${processId} at address 0x${block.startAddr.toString(16).padStart(4, '0')}.`);
-            }
-          });
-
-          if (found) {
-            this.mergeAdjacentFreeHoles();
-          }
-        } else {
-          this.blocks.forEach(block => {
-            if (block.type === 'allocated' && block.processId === processId) {
-              block.type = 'free';
-              block.processId = null;
-              block.reqSize = 0;
-              block.internalFrag = 0;
-              found = true;
-              logs.push(`Deallocated process ${processId} from ${block.partitionId || 'partition'}.`);
-            }
-          });
-        }
-
-        this.processes = this.processes.filter(p => p.id !== processId);
-        return { success: found, logs };
-      }
-
-      mergeAdjacentFreeHoles() {
-        if (this.scheme !== 'dynamic') return;
-
-        let i = 0;
-        while (i < this.blocks.length - 1) {
-          const current = this.blocks[i];
-          const next = this.blocks[i + 1];
-
-          if (current.type === 'free' && next.type === 'free') {
-            current.size += next.size;
-            this.blocks.splice(i + 1, 1);
+          const remainingSize = targetBlock.size - proc.size;
+          if (remainingSize > 0) {
+            const splitFreeBlock = {
+              id: `b-free-${algoId}-${Date.now()}-${pIdx}`,
+              startAddr: targetBlock.startAddr + proc.size,
+              endAddr: targetBlock.endAddr,
+              size: remainingSize,
+              status: 'free',
+              internalFrag: 0
+            };
+            blocks.splice(targetIndex, 1, allocatedBlock, splitFreeBlock);
           } else {
-            i++;
+            blocks.splice(targetIndex, 1, allocatedBlock);
           }
-        }
-      }
 
-      compactMemory() {
-        if (this.scheme !== 'dynamic') {
-          return { success: false, reason: 'Compaction is only applicable to Dynamic Partitioning.' };
-        }
+          nextFitPointer = (allocatedBlock.endAddr) % state.totalMemory;
+          if (nextFitPointer < state.osSize) nextFitPointer = state.osSize;
 
-        const logs = [];
-        this.allocationStats.compactionCount++;
-
-        const osBlock = this.blocks[0];
-        const allocatedBlocks = this.blocks.filter(b => b.type === 'allocated');
-
-        let currentAddr = this.osSize;
-        const newBlocks = [osBlock];
-
-        allocatedBlocks.forEach(block => {
-          block.startAddr = currentAddr;
-          currentAddr += block.size;
-          newBlocks.push(block);
-        });
-
-        const totalFreeSize = this.totalSize - currentAddr;
-
-        if (totalFreeSize > 0) {
-          newBlocks.push({
-            id: `block-free-compact-${Date.now()}`,
-            startAddr: currentAddr,
-            size: totalFreeSize,
-            type: 'free',
-            processId: null,
-            reqSize: 0,
-            internalFrag: 0
-          });
-        }
-
-        this.blocks = newBlocks;
-        this.nextFitPointer = currentAddr % this.totalSize;
-        if (this.nextFitPointer < this.osSize) this.nextFitPointer = this.osSize;
-
-        logs.push(`[COMPACTION COMPLETED] Consolidated ${totalFreeSize} KB free space into a single contiguous block.`);
-
-        return { success: true, freeHoleSize: totalFreeSize, logs };
-      }
-
-      getMetrics() {
-        let allocatedRam = 0;
-        let freeRam = 0;
-        let internalFrag = 0;
-        let externalFrag = 0;
-
-        const freeHoles = [];
-
-        this.blocks.forEach(block => {
-          if (block.type === 'allocated') {
-            allocatedRam += block.reqSize;
-            internalFrag += (block.internalFrag || 0);
-          } else if (block.type === 'free') {
-            freeRam += block.size;
-            freeHoles.push(block.size);
-          }
-        });
-
-        if (this.scheme === 'dynamic') {
-          if (freeHoles.length > 1) {
-            externalFrag = freeRam;
-          }
+          successfulAllocations++;
+          traceLogs.push(`[SUCCESS] ${proc.id} allocated at physical range ${allocatedBlock.startAddr} — ${allocatedBlock.endAddr} KB.`);
         } else {
-          externalFrag = freeRam;
+          failedAllocations++;
+          traceLogs.push(`[FAILED] No suitable hole large enough for ${proc.id} (${proc.size} KB).`);
+
+          let currentFreeSum = 0;
+          let currentLargest = 0;
+          blocks.forEach(b => {
+            if (b.status === 'free') {
+              currentFreeSum += b.size;
+              if (b.size > currentLargest) currentLargest = b.size;
+            }
+          });
+
+          if (currentFreeSum >= proc.size && currentLargest < proc.size) {
+            fragFailures++;
+            traceLogs.push(`⚠ [EXTERNAL FRAGMENTATION ALLOCATION FAILURE]`);
+            traceLogs.push(`  Required: ${proc.size} KB | Total Free RAM: ${currentFreeSum} KB | Largest Contiguous Hole: ${currentLargest} KB`);
+            traceLogs.push(`  Reason: Enough total memory exists, but no single contiguous hole is large enough.`);
+          }
         }
+      });
 
-        const totalUserSpace = this.totalSize - this.osSize;
-        const efficiency = totalUserSpace > 0 ? Math.round((allocatedRam / totalUserSpace) * 100) : 0;
-        const avgSearchSteps = this.allocationStats.totalRequested > 0 ? (this.searchStepsCount / this.allocationStats.totalRequested).toFixed(1) : '0';
+      let usedRam = 0;
+      let totalFree = 0;
+      let internalFrag = 0;
+      const freeHoles = [];
 
-        return {
-          totalRam: this.totalSize,
-          osSize: this.osSize,
-          allocatedRam,
-          freeRam,
-          freeHolesCount: freeHoles.length,
-          internalFrag,
-          externalFrag,
-          efficiency,
-          avgSearchSteps,
-          succeeded: this.allocationStats.succeeded,
-          failed: this.allocationStats.failed,
-          totalRequested: this.allocationStats.totalRequested
-        };
+      blocks.forEach(b => {
+        if (b.status === 'allocated') {
+          usedRam += (b.reqSize || b.size);
+          internalFrag += b.internalFrag;
+        } else if (b.status === 'free') {
+          totalFree += b.size;
+          freeHoles.push(b.size);
+        }
+      });
+
+      const availableRam = state.totalMemory - state.osSize;
+      const utilizationPct = availableRam > 0 ? Math.round((usedRam / availableRam) * 100) : 0;
+      const largestFreeHole = freeHoles.length > 0 ? Math.max(...freeHoles) : 0;
+      const freeHoleCount = freeHoles.length;
+      const externalFrag = freeHoleCount > 1 ? totalFree : 0;
+      const avgSearchSteps = totalRequests > 0 ? parseFloat((totalSearchSteps / totalRequests).toFixed(2)) : 0;
+      const compactionRequired = fragFailures > 0 || failedAllocations > 0;
+
+      return {
+        algoId,
+        successfulAllocations,
+        failedAllocations,
+        utilizationPct,
+        totalFree,
+        largestFreeHole,
+        freeHoleCount,
+        internalFrag,
+        externalFrag,
+        totalSearchSteps,
+        avgSearchSteps,
+        fragFailures,
+        compactionRequired,
+        finalBlocks: blocks,
+        traceLogs
+      };
+    }
+
+    function executeBenchmark() {
+      const scenarioDef = getBenchmarkScenarioDefinition(state.benchmarkScenario);
+      
+      const firstFitRes = runSingleAlgorithmBenchmark('first', scenarioDef);
+      const bestFitRes = runSingleAlgorithmBenchmark('best', scenarioDef);
+      const worstFitRes = runSingleAlgorithmBenchmark('worst', scenarioDef);
+      const nextFitRes = runSingleAlgorithmBenchmark('next', scenarioDef);
+
+      const list = [firstFitRes, bestFitRes, worstFitRes, nextFitRes];
+      let bestAlgo = list[0];
+
+      list.forEach(item => {
+        if (item.successfulAllocations > bestAlgo.successfulAllocations) {
+          bestAlgo = item;
+        } else if (item.successfulAllocations === bestAlgo.successfulAllocations) {
+          if (item.utilizationPct > bestAlgo.utilizationPct) {
+            bestAlgo = item;
+          } else if (item.utilizationPct === bestAlgo.utilizationPct && item.avgSearchSteps < bestAlgo.avgSearchSteps) {
+            bestAlgo = item;
+          }
+        }
+      });
+
+      const tiedAlgos = list.filter(item => 
+        item.successfulAllocations === bestAlgo.successfulAllocations && 
+        item.utilizationPct === bestAlgo.utilizationPct &&
+        Math.abs(item.avgSearchSteps - bestAlgo.avgSearchSteps) < 0.05
+      );
+
+      const nameMap = { first: 'First Fit', best: 'Best Fit', worst: 'Worst Fit', next: 'Next Fit' };
+      const reasons = [];
+
+      let winnerTitle = nameMap[bestAlgo.algoId];
+      if (tiedAlgos.length > 1) {
+        winnerTitle = tiedAlgos.map(a => nameMap[a.algoId]).join(' & ') + ' (Tie)';
+      }
+
+      reasons.push(`Allocated ${bestAlgo.successfulAllocations}/${scenarioDef.workload.length} processes (${bestAlgo.utilizationPct}% memory utilization)`);
+      
+      if (bestAlgo.fragFailures === 0) {
+        reasons.push('Suffered zero fragmentation-induced allocation failures');
+      } else {
+        reasons.push(`Experienced ${bestAlgo.fragFailures} fragmentation-induced failure(s)`);
+      }
+      
+      reasons.push(`Average search cost: ${bestAlgo.avgSearchSteps} steps per allocation`);
+
+      if (bestAlgo.failedAllocations === 0) {
+        reasons.push('All processes were successfully allocated without compaction');
+      } else {
+        reasons.push(`${bestAlgo.failedAllocations} process(es) failed allocation due to contiguous hole constraints`);
+        reasons.push('No compaction was performed during this benchmark run');
+      }
+
+      state.benchmarkStale = false;
+      state.benchmarkResults = {
+        scenario: scenarioDef,
+        first: firstFitRes,
+        best: bestFitRes,
+        worst: worstFitRes,
+        next: nextFitRes,
+        recommendation: {
+          algo: winnerTitle,
+          algoId: bestAlgo.algoId,
+          reasons
+        }
+      };
+    }
+
+    // --- CENTRAL BENCHMARK TRIGGER WITH VISUAL FEEDBACK ---
+    function runBenchmark(scenarioKey) {
+      if (scenarioKey) {
+        state.benchmarkScenario = scenarioKey;
+      }
+      state.benchmarkRunCount = (state.benchmarkRunCount || 0) + 1;
+      state.lastBenchmarkRunTime = new Date().toLocaleTimeString();
+      state.benchmarkJustRan = true;
+
+      executeBenchmark();
+      renderApp();
+
+      setTimeout(() => {
+        state.benchmarkJustRan = false;
+        const toast = document.getElementById('benchmark-success-toast');
+        if (toast) toast.style.opacity = '0.75';
+      }, 3500);
+    }
+
+    function runBenchmarkFromHeader() {
+      switchTab('benchmark');
+      runBenchmark();
+    }
+
+    function runBenchmarkWithSimulatorWorkload() {
+      switchTab('benchmark');
+      runBenchmark('current-workload');
+    }
+
+    // --- 5. EXPERIMENT RUNNER ---
+    function loadExperiment(index, autoRun = false) {
+      state.selectedExpIndex = index;
+      const exp = LAB_EXPERIMENTS[index];
+      resetState();
+      state.scheme = exp.scheme;
+      state.algorithm = exp.algorithm;
+      initMemory();
+
+      state.logs.push(`\n=== LOADED ${exp.title.toUpperCase()} ===`);
+      state.logs.push(`[OBJECTIVE] ${exp.objective}`);
+
+      if (autoRun) {
+        exp.actions.forEach(action => {
+          if (action.type === 'allocate') {
+            allocateProcess(action.id, action.size);
+          } else if (action.type === 'deallocate') {
+            deallocateProcess(action.id);
+          } else if (action.type === 'compact') {
+            compactMemory();
+          }
+        });
+        switchTab('simulator');
+      } else {
+        renderApp();
       }
     }
 
-    /* Academic Presets */
-    const PRESET_SCENARIOS = {
-      internalFrag: {
-        title: "Fixed Partition Internal Fragmentation Trap",
-        description: "Allocates processes into fixed 128KB partitions, highlighting internal wasted space inside each block.",
-        scheme: "fixed-equal",
-        algorithm: "first",
-        actions: [
-          { type: "allocate", id: "P1", size: 50 },
-          { type: "allocate", id: "P2", size: 80 },
-          { type: "allocate", id: "P3", size: 30 },
-          { type: "allocate", id: "P4", size: 100 }
-        ]
-      },
-      externalFrag: {
-        title: "Dynamic Partition External Fragmentation & Hole Split",
-        description: "Allocates and terminates processes to create isolated holes, then attempts a large allocation that fails despite total free memory being sufficient.",
-        scheme: "dynamic",
-        algorithm: "first",
-        actions: [
-          { type: "allocate", id: "P1", size: 180 },
-          { type: "allocate", id: "P2", size: 250 },
-          { type: "allocate", id: "P3", size: 180 },
-          { type: "allocate", id: "P4", size: 240 },
-          { type: "deallocate", id: "P2" },
-          { type: "allocate", id: "P5", size: 300 }
-        ]
-      },
-      bestVsWorst: {
-        title: "Best Fit vs Worst Fit Residual Fragment Creation",
-        description: "Demonstrates how Best Fit leaves tiny unusable leftover holes versus Worst Fit leaving larger reusable fragments.",
-        scheme: "dynamic",
-        algorithm: "best",
-        actions: [
-          { type: "allocate", id: "P1", size: 120 },
-          { type: "allocate", id: "P2", size: 200 },
-          { type: "allocate", id: "P3", size: 120 },
-          { type: "allocate", id: "P4", size: 400 },
-          { type: "deallocate", id: "P2" },
-          { type: "allocate", id: "P5", size: 150 }
-        ]
-      },
-      nextFitWalk: {
-        title: "Next Fit Rotational Pointer Search",
-        description: "Shows how Next Fit remembers its last allocation pointer location rather than always scanning from memory address 0x0000.",
-        scheme: "dynamic",
-        algorithm: "next",
-        actions: [
-          { type: "allocate", id: "P1", size: 150 },
-          { type: "allocate", id: "P2", size: 150 },
-          { type: "allocate", id: "P3", size: 150 },
-          { type: "deallocate", id: "P1" },
-          { type: "allocate", id: "P4", size: 100 }
-        ]
-      }
-    };
+    function exportLabReport() {
+      window.print();
+    }
 
-    /* UIRenderer Module */
-    class UIRenderer {
-      constructor() {
-        this.memoryRuler = document.getElementById('memoryRuler');
-        this.memoryTrack = document.getElementById('memoryTrack');
-        this.matrixGrid = document.getElementById('matrixGrid');
-        this.blockDetailsGrid = document.getElementById('blockDetailsGrid');
-        this.logContent = document.getElementById('logContent');
-        this.activeProcList = document.getElementById('activeProcList');
+    // --- 6. RENDER APP VIEWPORT ---
+    function renderApp() {
+      const viewport = document.getElementById('app-viewport');
+      const metrics = getMetrics();
 
-        this.statTotalRam = document.getElementById('statTotalRam');
-        this.statAddressRange = document.getElementById('statAddressRange');
-        this.statAllocated = document.getElementById('statAllocated');
-        this.statAllocatedPct = document.getElementById('statAllocatedPct');
-        this.statFree = document.getElementById('statFree');
-        this.statFreePct = document.getElementById('statFreePct');
-        this.statInternal = document.getElementById('statInternal');
-        this.statExternal = document.getElementById('statExternal');
-        this.statEfficiency = document.getElementById('statEfficiency');
-        this.statSuccessCount = document.getElementById('statSuccessCount');
+      // ===================================
+      // VIEW A: SIMULATOR ARENA
+      // ===================================
+      if (state.activeTab === 'simulator') {
+        viewport.innerHTML = `
+          <!-- Printable Report Header -->
+          <div class="print-header">
+            <h1 style="font-size: 18pt; font-weight: bold;">MEMORYMAP PRO — OS LABORATORY REPORT</h1>
+            <p style="font-size: 10pt; color: #444;">Contiguous Memory Allocation & Fragmentation Practical Experiment</p>
+            <p style="font-size: 9pt; margin-top: 4px;">System RAM: 1024 KB | OS Reserved: 128 KB | Scheme: ${state.scheme.toUpperCase()} | Algorithm: ${state.algorithm.toUpperCase()} FIT</p>
+          </div>
 
-        this.pointerLegend = document.getElementById('pointerLegend');
-        this.hoverTooltip = document.getElementById('hoverTooltip');
-        this.extFragAlertBanner = document.getElementById('extFragAlertBanner');
-        this.extFragAlertText = document.getElementById('extFragAlertText');
-        this.errorToast = document.getElementById('errorToast');
-        this.errorToastMsg = document.getElementById('errorToastMsg');
-
-        this.blockModal = document.getElementById('blockModal');
-        this.modalTitle = document.getElementById('modalTitle');
-        this.modalBody = document.getElementById('modalBody');
-        this.closeModalBtn = document.getElementById('closeModalBtn');
-
-        if (this.closeModalBtn) {
-          this.closeModalBtn.addEventListener('click', () => this.hideModal());
-        }
-      }
-
-      renderAll(engine, lastResult = null) {
-        this.renderStats(engine);
-        this.renderRuler(engine.totalSize);
-        this.renderMemoryTrack(engine, this.memoryTrack, lastResult);
-        this.renderMatrixGrid(engine);
-        this.renderBlockDetails(engine);
-        this.renderActiveProcessList(engine);
-
-        if (engine.algorithm === 'next') {
-          this.pointerLegend.style.display = 'flex';
-        } else {
-          this.pointerLegend.style.display = 'none';
-        }
-
-        if (lastResult && lastResult.externalFragDetected) {
-          this.extFragAlertText.textContent = lastResult.reason || `Process requested ${lastResult.failedReqSize} KB. Total free space is ${lastResult.totalFree} KB, but scattered across ${lastResult.freeHolesCount} isolated holes!`;
-          this.extFragAlertBanner.classList.remove('hidden');
-        } else {
-          this.extFragAlertBanner.classList.add('hidden');
-        }
-      }
-
-      renderStats(engine) {
-        const m = engine.getMetrics();
-        const hexMax = '0x' + m.totalRam.toString(16).padStart(4, '0').toUpperCase();
-
-        this.statTotalRam.textContent = `${m.totalRam} KB`;
-        this.statAddressRange.textContent = `0x0000 - ${hexMax}`;
-
-        const allocPct = m.totalRam > 0 ? ((m.allocatedRam / (m.totalRam - m.osSize)) * 100).toFixed(1) : 0;
-        this.statAllocated.textContent = `${m.allocatedRam} KB`;
-        this.statAllocatedPct.textContent = `${allocPct}% of user space`;
-
-        const freePct = m.totalRam > 0 ? ((m.freeRam / (m.totalRam - m.osSize)) * 100).toFixed(1) : 0;
-        this.statFree.textContent = `${m.freeRam} KB`;
-        this.statFreePct.textContent = `${freePct}% free`;
-
-        this.statInternal.textContent = `${m.internalFrag} KB`;
-        this.statExternal.textContent = `${m.externalFrag} KB (${m.freeHolesCount} hole${m.freeHolesCount === 1 ? '' : 's'})`;
-
-        this.statEfficiency.textContent = `${m.efficiency}%`;
-        this.statSuccessCount.textContent = `${m.succeeded} / ${m.totalRequested} succeeded`;
-      }
-
-      renderRuler(totalRam) {
-        this.memoryRuler.innerHTML = '';
-        const stepKB = 128;
-
-        for (let addr = 0; addr <= totalRam; addr += stepKB) {
-          const pct = (addr / totalRam) * 100;
-          const hex = '0x' + addr.toString(16).padStart(4, '0').toUpperCase();
-
-          const tick = document.createElement('div');
-          tick.className = 'ruler-tick';
-          tick.style.left = `${pct}%`;
-          tick.innerHTML = `<span>${addr}KB (${hex})</span>`;
-          this.memoryRuler.appendChild(tick);
-        }
-      }
-
-      renderMemoryTrack(engine, trackElement, lastResult = null) {
-        trackElement.innerHTML = '';
-        const totalRam = engine.totalSize;
-
-        engine.blocks.forEach(block => {
-          const widthPct = (block.size / totalRam) * 100;
-          const blockEl = document.createElement('div');
-          blockEl.className = `mem-block ${block.type}-block`;
-          blockEl.style.width = `${widthPct}%`;
-
-          const startHex = '0x' + block.startAddr.toString(16).padStart(4, '0').toUpperCase();
-          const endAddr = block.startAddr + block.size;
-          const endHex = '0x' + endAddr.toString(16).padStart(4, '0').toUpperCase();
-
-          if (block.type === 'os') {
-            blockEl.innerHTML = `
-              <div class="block-title">OS Kernel</div>
-              <div class="block-size">${block.size} KB</div>
-              <div class="block-addr">${startHex} - ${endHex}</div>
-            `;
-          } else if (block.type === 'allocated') {
-            let contentHTML = `
-              <div class="block-title">
-                <span>${block.processId}</span>
-                <span class="dealloc-btn" title="Click to Free/Kill Process" onclick="event.stopPropagation(); app.deallocateProcess('${block.processId}')">&times;</span>
-              </div>
-              <div class="block-size">${block.reqSize} KB</div>
-              <div class="block-addr">${startHex} - ${endHex}</div>
-            `;
-
-            if (block.internalFrag > 0) {
-              const internalPct = (block.internalFrag / block.size) * 100;
-              contentHTML += `
-                <div class="internal-frag-overlay" style="width: ${internalPct}%" title="Internal Fragmentation: ${block.internalFrag} KB wasted">
-                  Frag: ${block.internalFrag}K
-                </div>
-              `;
-            }
-
-            blockEl.innerHTML = contentHTML;
-          } else if (block.type === 'free') {
-            if (lastResult && lastResult.externalFragDetected) {
-              blockEl.classList.add('external-frag-alert');
-            }
-
-            blockEl.innerHTML = `
-              <div class="block-title">Free</div>
-              <div class="block-size">${block.size} KB</div>
-              <div class="block-addr">${startHex} - ${endHex}</div>
-            `;
-          }
-
-          blockEl.addEventListener('mouseenter', (e) => this.showHoverTooltip(e, block));
-          blockEl.addEventListener('mousemove', (e) => this.moveHoverTooltip(e));
-          blockEl.addEventListener('mouseleave', () => this.hideHoverTooltip());
-
-          blockEl.addEventListener('click', () => this.showBlockDetailsModal(block));
-          trackElement.appendChild(blockEl);
-        });
-
-        if (engine.algorithm === 'next') {
-          const pointerPct = (engine.nextFitPointer / totalRam) * 100;
-          const pointerEl = document.createElement('div');
-          pointerEl.className = 'pointer-line';
-          pointerEl.style.left = `${pointerPct}%`;
-          trackElement.appendChild(pointerEl);
-        }
-      }
-
-      showHoverTooltip(e, block) {
-        const startHex = '0x' + block.startAddr.toString(16).padStart(4, '0').toUpperCase();
-        const endHex = '0x' + (block.startAddr + block.size).toString(16).padStart(4, '0').toUpperCase();
-
-        let html = `<div><strong>${block.processId || 'Free Hole'}</strong></div>`;
-        html += `<div>Bounds: ${startHex} - ${endHex}</div>`;
-        html += `<div>Capacity: ${block.size} KB</div>`;
-
-        if (block.type === 'allocated') {
-          html += `<div>Requested: ${block.reqSize} KB</div>`;
-          if (block.internalFrag > 0) {
-            html += `<div style="color:#f59e0b;">Internal Frag: ${block.internalFrag} KB</div>`;
-          }
-        }
-
-        this.hoverTooltip.innerHTML = html;
-        this.hoverTooltip.style.display = 'block';
-        this.moveHoverTooltip(e);
-      }
-
-      moveHoverTooltip(e) {
-        this.hoverTooltip.style.left = `${e.clientX + 12}px`;
-        this.hoverTooltip.style.top = `${e.clientY + 12}px`;
-      }
-
-      hideHoverTooltip() {
-        this.hoverTooltip.style.display = 'none';
-      }
-
-      renderMatrixGrid(engine) {
-        if (!this.matrixGrid) return;
-        this.matrixGrid.innerHTML = '';
-        const totalFrames = 64;
-        const frameSize = 16;
-
-        for (let i = 0; i < totalFrames; i++) {
-          const frameStart = i * frameSize;
-          const block = engine.blocks.find(b => frameStart >= b.startAddr && frameStart < (b.startAddr + b.size));
-
-          const cell = document.createElement('div');
-          cell.className = 'frame-cell';
-
-          if (block) {
-            if (block.type === 'os') {
-              cell.classList.add('frame-kernel');
-              cell.innerHTML = `<span class="frame-id">F${i.toString().padStart(2, '0')}</span><span class="frame-tag">SYS</span>`;
-            } else if (block.type === 'allocated') {
-              cell.classList.add('frame-allocated');
-              cell.innerHTML = `<span class="frame-id">F${i.toString().padStart(2, '0')}</span><span class="frame-tag">${block.processId}</span>`;
-            } else {
-              cell.classList.add('frame-free');
-              cell.innerHTML = `<span class="frame-id">F${i.toString().padStart(2, '0')}</span><span class="frame-tag">FREE</span>`;
-            }
-          }
-
-          this.matrixGrid.appendChild(cell);
-        }
-      }
-
-      renderBlockDetails(engine) {
-        this.blockDetailsGrid.innerHTML = '';
-
-        engine.blocks.forEach(block => {
-          const startHex = '0x' + block.startAddr.toString(16).padStart(4, '0').toUpperCase();
-          const endHex = '0x' + (block.startAddr + block.size).toString(16).padStart(4, '0').toUpperCase();
-
-          const item = document.createElement('div');
-          item.className = 'block-card-item';
-
-          if (block.type === 'os') {
-            item.innerHTML = `
-              <div><strong>Block:</strong> OS Kernel</div>
-              <div><strong>Address:</strong> ${startHex} - ${endHex}</div>
-              <div><strong>Capacity:</strong> ${block.size} KB</div>
-            `;
-          } else if (block.type === 'allocated') {
-            item.innerHTML = `
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <strong class="badge-proc">Process ${block.processId}</strong>
-                <span class="dealloc-btn" onclick="app.deallocateProcess('${block.processId}')">Free</span>
-              </div>
-              <div><strong>Address:</strong> ${startHex} - ${endHex}</div>
-              <div><strong>Used / Capacity:</strong> ${block.reqSize} KB / ${block.size} KB</div>
-              ${block.internalFrag > 0 ? `<div class="badge-frag">Internal Frag: ${block.internalFrag} KB</div>` : ''}
-            `;
-          } else if (block.type === 'free') {
-            item.innerHTML = `
-              <div><strong class="badge-free">Free Hole</strong> (${block.partitionId || 'Unallocated'})</div>
-              <div><strong>Address:</strong> ${startHex} - ${endHex}</div>
-              <div><strong>Available Hole Size:</strong> ${block.size} KB</div>
-            `;
-          }
-
-          this.blockDetailsGrid.appendChild(item);
-        });
-      }
-
-      renderActiveProcessList(engine) {
-        if (!this.activeProcList) return;
-        this.activeProcList.innerHTML = '';
-
-        const activeProcs = engine.blocks.filter(b => b.type === 'allocated');
-
-        if (activeProcs.length === 0) {
-          this.activeProcList.innerHTML = `<div style="font-size:0.78rem; color:var(--text-dim);">No active processes allocated.</div>`;
-          return;
-        }
-
-        activeProcs.forEach(b => {
-          const card = document.createElement('div');
-          card.className = 'proc-item-card';
-          card.innerHTML = `
-            <div>
-              <strong>${b.processId}</strong> (${b.reqSize} KB)
-              <div style="font-size:0.68rem; color:var(--text-dim);">0x${b.startAddr.toString(16).padStart(4,'0').toUpperCase()}</div>
+          <!-- Top Metrics Bar Cards -->
+          <div class="grid-metrics">
+            <div class="metric-box">
+              <span class="metric-label">Total RAM Capacity</span>
+              <span class="metric-val text-white">${metrics.totalMemory} KB</span>
+              <span class="metric-sub">OS Reserved: ${metrics.osSize} KB (0x0080)</span>
             </div>
-            <button class="kill-btn" onclick="app.deallocateProcess('${b.processId}')">Free</button>
-          `;
-          this.activeProcList.appendChild(card);
-        });
-      }
+            <div class="metric-box">
+              <span class="metric-label">RAM Utilization</span>
+              <span class="metric-val" style="color: var(--primary-cyan);">${metrics.utilizationPct}%</span>
+              <span class="metric-sub">${metrics.usedRam} KB of ${metrics.availableRam} KB Used</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-label">Internal Fragmentation</span>
+              <span class="metric-val" style="color: var(--accent-amber);">${metrics.internalFrag} KB</span>
+              <span class="metric-sub">${state.scheme === 'dynamic' ? '0 KB (Dynamic Mode)' : 'Fixed Mode Wasted Space'}</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-label">External Fragmentation</span>
+              <span class="metric-val" style="color: var(--accent-amber);">${metrics.externalFrag} KB</span>
+              <span class="metric-sub">${metrics.freeHolesCount} Scattered Free Holes</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-label">Largest Contiguous Hole</span>
+              <span class="metric-val" style="color: var(--accent-emerald);">${metrics.largestFreeBlock} KB</span>
+              <span class="metric-sub">Max Single Process Limit</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-label">Avg Search Cost</span>
+              <span class="metric-val" style="color: var(--primary-indigo);">${metrics.avgSearchSteps}</span>
+              <span class="metric-sub">Examined Holes / Alloc</span>
+            </div>
+          </div>
 
-      showInlineError(msg) {
-        this.errorToastMsg.textContent = msg;
-        this.errorToast.classList.remove('hidden');
-        setTimeout(() => {
-          this.errorToast.classList.add('hidden');
-        }, 4000);
-      }
+          <!-- Main Dashboard Arena -->
+          <div class="grid-dashboard">
+            <!-- Left Controls Column -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+              <!-- 1. Memory Config Card -->
+              <div class="card">
+                <div class="card-title">
+                  <span>1. Memory Configuration</span>
+                  <span class="badge-tag">SETUP</span>
+                </div>
 
-      appendLog(message, type = 'info') {
-        const entry = document.createElement('div');
-        entry.className = `log-entry ${type}`;
-        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-        this.logContent.appendChild(entry);
-        this.logContent.scrollTop = this.logContent.scrollHeight;
-      }
+                <div>
+                  <label>Partitioning Scheme:</label>
+                  <select onchange="state.scheme = this.value; initMemory(); renderApp();">
+                    <option value="dynamic" ${state.scheme === 'dynamic' ? 'selected' : ''}>Dynamic Partitioning (Variable Holes)</option>
+                    <option value="fixed-equal" ${state.scheme === 'fixed-equal' ? 'selected' : ''}>Fixed Equal Partitions (8 x 128 KB)</option>
+                  </select>
+                </div>
 
-      clearLog() {
-        this.logContent.innerHTML = '';
-      }
+                <div>
+                  <label>Placement Fit Algorithm:</label>
+                  <select onchange="state.algorithm = this.value; renderApp();">
+                    <option value="first" ${state.algorithm === 'first' ? 'selected' : ''}>First Fit (Scans from 0 KB)</option>
+                    <option value="best" ${state.algorithm === 'best' ? 'selected' : ''}>Best Fit (Minimizes residual waste)</option>
+                    <option value="worst" ${state.algorithm === 'worst' ? 'selected' : ''}>Worst Fit (Maximizes remaining hole)</option>
+                    <option value="next" ${state.algorithm === 'next' ? 'selected' : ''}>Next Fit (Rotational pointer cursor)</option>
+                  </select>
+                </div>
 
-      showBlockDetailsModal(block) {
-        const startHex = '0x' + block.startAddr.toString(16).padStart(4, '0').toUpperCase();
-        const endHex = '0x' + (block.startAddr + block.size).toString(16).padStart(4, '0').toUpperCase();
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                  <button class="btn btn-accent" onclick="compactMemory()">Compact RAM</button>
+                  <button class="btn" onclick="resetState()">Reset State</button>
+                </div>
 
-        this.modalTitle.textContent = `Memory Inspector: ${block.processId || 'Free Hole'}`;
-        
-        let html = `
-          <table style="width:100%; font-size:0.9rem; border-collapse:collapse;">
-            <tr><td style="padding:6px 0; color:#94a3b8;">Start Address:</td><td style="font-family:monospace; font-weight:bold;">${startHex} (${block.startAddr} KB)</td></tr>
-            <tr><td style="padding:6px 0; color:#94a3b8;">End Address:</td><td style="font-family:monospace; font-weight:bold;">${endHex} (${block.startAddr + block.size} KB)</td></tr>
-            <tr><td style="padding:6px 0; color:#94a3b8;">Total Block Size:</td><td style="font-weight:bold;">${block.size} KB</td></tr>
-            <tr><td style="padding:6px 0; color:#94a3b8;">Block Type:</td><td style="text-transform:capitalize; font-weight:bold;">${block.type}</td></tr>
+                <button class="btn btn-cyan" onclick="runBenchmarkWithSimulatorWorkload()" style="justify-content: center; padding: 10px; margin-top: 4px;">
+                  ⚡ Benchmark 4 Algos on This Workload
+                </button>
+              </div>
+
+              <!-- 2. Process Creator Card -->
+              <div class="card">
+                <div class="card-title">
+                  <span>2. Process Creator</span>
+                  <span class="badge-tag">ALLOCATE</span>
+                </div>
+
+                <form onsubmit="event.preventDefault(); allocateProcess(this.pid.value, parseInt(this.size.value, 10));" style="display: flex; flex-direction: column; gap: 12px;">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div>
+                      <label>Process ID:</label>
+                      <input name="pid" defaultValue="P1" placeholder="Process ID" required />
+                    </div>
+                    <div>
+                      <label>Req Size (KB):</label>
+                      <input name="size" type="number" defaultValue="150" min="1" max="896" placeholder="Size (KB)" required />
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-cyan" style="justify-content: center; padding: 10px;">+ Allocate Process Block</button>
+                </form>
+
+                <div style="border-top: 1px solid #1e293b; padding-top: 12px;">
+                  <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px;">
+                    Active Allocated Processes (${state.processes.length})
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 6px; max-height: 140px; overflow-y: auto;">
+                    ${state.processes.length === 0 ? '<div style="font-size: 11px; color: #64748b; font-style: italic;">No active processes in RAM.</div>' : ''}
+                    ${state.processes.map(p => `
+                      <div style="background-color: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; font-family: 'Fira Code', monospace; font-size: 11px;">
+                        <div>
+                          <strong style="color: var(--primary-cyan);">${p.id}</strong>
+                          <span style="font-size: 10px; color: var(--text-muted); margin-left: 6px;">${p.reqSize} KB ${p.internalFrag > 0 ? `(Waste: ${p.internalFrag}K)` : ''}</span>
+                        </div>
+                        <button onclick="deallocateProcess('${p.id}')" style="padding: 2px 8px; background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 4px; font-size: 10px; font-weight: 700; cursor: pointer;">Free</button>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Visual Track & Logs Column -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+              <!-- Physical Memory Spectrum Track Card -->
+              <div class="card">
+                <div class="card-title">
+                  <span>Physical Memory Spectrum Track</span>
+                  <span class="badge-tag" style="color: var(--accent-emerald);">LIVE TRACK</span>
+                </div>
+
+                ${state.lastAllocationFailedExtFrag && state.lastFailedDetails ? `
+                  <div class="alert-banner">
+                    <div>
+                      <strong style="color: white; font-size: 13px;">🚨 ALLOCATION FAILURE: External Fragmentation Detected!</strong>
+                      <div style="margin-top: 4px;">
+                        Required: <strong>${state.lastFailedDetails.reqSize} KB</strong> | 
+                        Total Free RAM: <strong>${state.lastFailedDetails.freeRam} KB</strong> | 
+                        Largest Contiguous Hole: <strong>${state.lastFailedDetails.largestFreeBlock} KB</strong> (${state.lastFailedDetails.freeHolesCount} holes)
+                      </div>
+                      <div style="font-size: 11px; opacity: 0.95; margin-top: 2px; color: #fecdd3;">
+                        <strong>Academic Reason:</strong> Enough total free memory exists (${state.lastFailedDetails.freeRam} KB), but no single contiguous hole is large enough.
+                      </div>
+                    </div>
+                    <button class="btn btn-accent" onclick="compactMemory()">Compact RAM Now</button>
+                  </div>
+                ` : ''}
+
+                <!-- Track Container with Proper Offset Ruler -->
+                <div class="track-wrapper">
+                  <div class="ruler">
+                    ${[0, 128, 256, 384, 512, 640, 768, 896, 1024].map(kb => `
+                      <div class="ruler-tick" style="left: ${(kb / metrics.totalMemory) * 100}%;">
+                        <span>${kb} KB</span>
+                        <div class="ruler-tick-line"></div>
+                      </div>
+                    `).join('')}
+                  </div>
+
+                  <div class="track-container">
+                    ${state.blocks.map(b => {
+                      const widthPct = (b.size / metrics.totalMemory) * 100;
+                      if (b.status === 'os') {
+                        return `<div class="block-segment block-os" style="width: ${widthPct}%;"><span>OS Kernel</span><span style="font-size: 10px;">${b.size} KB (0x0000)</span></div>`;
+                      }
+                      if (b.status === 'allocated') {
+                        return `
+                          <div class="block-segment block-alloc" style="width: ${widthPct}%;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                              <span>${b.processId}</span>
+                              <span onclick="deallocateProcess('${b.processId}')" style="cursor: pointer; padding: 0 4px; font-weight: bold;" title="Free process">×</span>
+                            </div>
+                            <span style="font-size: 10px;">${b.reqSize} KB [${b.startAddr}-${b.endAddr}K]</span>
+                            ${b.internalFrag > 0 ? `<div class="frag-overlay">Internal: ${b.internalFrag}K</div>` : ''}
+                          </div>
+                        `;
+                      }
+                      return `<div class="block-segment block-free ${state.lastAllocationFailedExtFrag ? 'alert' : ''}" style="width: ${widthPct}%;"><span>FREE</span><span style="font-size: 10px;">${b.size} KB</span></div>`;
+                    }).join('')}
+
+                    ${state.algorithm === 'next' ? `<div class="cursor-line" style="left: ${(state.nextFitPointer / metrics.totalMemory) * 100}%;" title="Next Fit Cursor: ${state.nextFitPointer} KB"></div>` : ''}
+                  </div>
+                </div>
+              </div>
+
+              <!-- 64 Block Overview Grid Card -->
+              <div class="card">
+                <div class="card-title">
+                  <span>Memory Block Overview Grid — 64 Units @ 16 KB per Unit</span>
+                  <span class="badge-tag">OVERVIEW</span>
+                </div>
+
+                <div class="academic-note">
+                  <span>💡 <strong>Academic Representation:</strong> Grid displays physical memory divided into 64 uniform units (16 KB each). Continuous process allocations span across cells according to exact physical KB address boundaries.</span>
+                </div>
+
+                <div class="block-grid">
+                  ${Array.from({ length: 64 }).map((_, i) => {
+                    const addr = i * 16;
+                    const hexAddr = '0x' + addr.toString(16).padStart(4, '0').toUpperCase();
+                    const b = state.blocks.find(blk => addr >= blk.startAddr && addr < blk.endAddr);
+                    let cls = '';
+                    let label = 'FREE';
+                    if (b) {
+                      if (b.status === 'os') { cls = 'cell-os'; label = 'OS'; }
+                      else if (b.status === 'allocated') { cls = 'cell-alloc'; label = b.processId; }
+                    }
+                    return `<div class="grid-cell ${cls}" title="Block B${i.toString().padStart(2, '0')} | Range: ${addr} KB - ${addr + 16} KB (${hexAddr}) | ${label}"><span>B${i.toString().padStart(2, '0')}</span><span style="font-size: 8px; opacity: 0.85;">${label}</span></div>`;
+                  }).join('')}
+                </div>
+              </div>
+
+              <!-- Event Log Console Card -->
+              <div class="card">
+                <div class="card-title">
+                  <span>OS Trace Console & Search Cost Log</span>
+                  <span class="badge-tag">TRACE CONSOLE</span>
+                </div>
+                <div class="console-log">
+                  ${state.logs.map(l => {
+                    let color = '#94a3b8';
+                    if (l.includes('[SUCCESS]')) color = '#10b981';
+                    if (l.includes('🚨') || l.includes('[FAILED]')) color = '#f43f5e';
+                    if (l.includes('[COALESCING]') || l.includes('[COMPACTION]')) color = '#f59e0b';
+                    if (l.includes('[SEARCH]') || l.includes('[SELECT]')) color = '#38bdf8';
+                    return `<div style="color: ${color};">${l}</div>`;
+                  }).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
         `;
-
-        if (block.type === 'allocated') {
-          html += `
-            <tr><td style="padding:6px 0; color:#94a3b8;">Process ID:</td><td style="color:#38bdf8; font-weight:bold;">${block.processId}</td></tr>
-            <tr><td style="padding:6px 0; color:#94a3b8;">Requested Memory:</td><td>${block.reqSize} KB</td></tr>
-            <tr><td style="padding:6px 0; color:#94a3b8;">Internal Fragmentation:</td><td style="color:#f59e0b; font-weight:bold;">${block.internalFrag} KB</td></tr>
-          `;
-        }
-
-        html += `</table>`;
-
-        if (block.type === 'allocated') {
-          html += `
-            <button class="btn btn-danger btn-block" style="margin-top:1rem;" onclick="app.deallocateProcess('${block.processId}'); app.ui.hideModal();">
-              Terminate & Free Memory
-            </button>
-          `;
-        }
-
-        this.modalBody.innerHTML = html;
-        this.blockModal.classList.remove('hidden');
       }
 
-      hideModal() {
-        this.blockModal.classList.add('hidden');
+      // ===================================
+      // VIEW B: 4-ALGORITHM BENCHMARK ARENA
+      // ===================================
+      else if (state.activeTab === 'benchmark') {
+        if (!state.benchmarkResults) {
+          executeBenchmark();
+        }
+
+        const bData = state.benchmarkResults;
+        const s = bData.scenario;
+        const f = bData.first;
+        const b = bData.best;
+        const w = bData.worst;
+        const n = bData.next;
+
+        const maxAlloc = Math.max(f.successfulAllocations, b.successfulAllocations, w.successfulAllocations, n.successfulAllocations);
+        const maxUtil = Math.max(f.utilizationPct, b.utilizationPct, w.utilizationPct, n.utilizationPct);
+        const minSearch = Math.min(f.avgSearchSteps, b.avgSearchSteps, w.avgSearchSteps, n.avgSearchSteps);
+        const minFrag = Math.min(f.externalFrag, b.externalFrag, w.externalFrag, n.externalFrag);
+
+        viewport.innerHTML = `
+          <!-- Benchmark Top Toolbar Card -->
+          <div class="card">
+            <div class="card-title">
+              <span>4-Algorithm Benchmark Arena // Controlled Comparative Experiment</span>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-cyan" id="btn-run-benchmark" onclick="runBenchmark();" style="font-size: 13px; padding: 10px 18px; box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);">
+                  ▶ Run Benchmark Now
+                </button>
+                <button class="btn" onclick="runBenchmark('fragmented');">↻ Reset Scenario</button>
+              </div>
+            </div>
+
+            <!-- Execution Success Toast / Status -->
+            ${state.lastBenchmarkRunTime ? `
+              <div id="benchmark-success-toast" style="background: linear-gradient(90deg, rgba(16, 185, 129, 0.15), rgba(6, 182, 212, 0.2), rgba(16, 185, 129, 0.15)); border: 1px solid var(--accent-emerald); border-radius: 12px; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; transition: all 0.5s;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 22px;">⚡</span>
+                  <div>
+                    <strong style="color: var(--accent-emerald); font-size: 13px;">Benchmark Run #${state.benchmarkRunCount || 1} Successfully Executed!</strong>
+                    <div style="font-size: 11px; color: #cbd5e1;">Evaluated 4 algorithms independently at <strong>${state.lastBenchmarkRunTime}</strong> on: <em>${s.name}</em></div>
+                  </div>
+                </div>
+                <div style="font-family: 'Fira Code', monospace; font-size: 11px; color: var(--primary-cyan); font-weight: bold;">
+                  STATUS: UP TO DATE ✓
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Stale Notification Banner -->
+            ${state.benchmarkStale ? `
+              <div class="stale-banner">
+                <div>
+                  <strong>⚠ Live Simulator Workload Changed:</strong> Current benchmark results reflect an earlier run.
+                </div>
+                <button class="btn btn-sm btn-accent" onclick="runBenchmark('current-workload');">Sync & Recalculate</button>
+              </div>
+            ` : ''}
+
+            <!-- Academic Validation Checklist Panel -->
+            <div style="background-color: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 12px 16px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 11px; font-family: 'Fira Code', monospace; color: #cbd5e1;">
+              <div><span style="color: var(--accent-emerald);">✓</span> Same Memory Capacity (1024 KB)</div>
+              <div><span style="color: var(--accent-emerald);">✓</span> Same OS Reservation (128 KB)</div>
+              <div><span style="color: var(--accent-emerald);">✓</span> Same Initial State (Cloned)</div>
+              <div><span style="color: var(--accent-emerald);">✓</span> Same Process Workload</div>
+              <div><span style="color: var(--accent-emerald);">✓</span> Independent Simulation Runs</div>
+              <div><span style="color: var(--accent-emerald);">✓</span> Real Search Traces</div>
+              <div><span style="color: var(--accent-emerald);">✓</span> Calculated Dynamic Metrics</div>
+              <div><span style="color: var(--accent-emerald);">✓</span> Zero Hardcoded Results</div>
+            </div>
+
+            <!-- Scenario Selector -->
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+              <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Benchmark Workload Scenario:</span>
+              <select onchange="runBenchmark(this.value);" style="max-width: 540px;">
+                <option value="fragmented" ${state.benchmarkScenario === 'fragmented' ? 'selected' : ''}>Fragmentation Benchmark Scenario (Multiple Diverse Holes: 120K, 250K, 176K)</option>
+                <option value="basic" ${state.benchmarkScenario === 'basic' ? 'selected' : ''}>Basic Sequential Scenario (Single 896 KB Hole)</option>
+                <option value="current-workload" ${state.benchmarkScenario === 'current-workload' ? 'selected' : ''}>Live Simulator Workload (Compares placement of current active processes)</option>
+                <option value="random" ${state.benchmarkScenario === 'random' ? 'selected' : ''}>Random Multi-Hole Workload Scenario</option>
+              </select>
+            </div>
+            <p style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">${s.description}</p>
+          </div>
+
+          <!-- Dynamic Recommendation Banner Card -->
+          <div class="card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 27, 75, 0.7)); border-color: rgba(99, 102, 241, 0.5);">
+            <div style="display: flex; align-items: flex-start; gap: 14px;">
+              <div style="font-size: 32px; line-height: 1;">🏆</div>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="font-size: 15px; font-weight: 800; color: white;">
+                  RECOMMENDED ALGORITHM FOR THIS WORKLOAD: <span style="color: var(--primary-cyan); text-transform: uppercase;">${bData.recommendation.algo}</span>
+                </div>
+                <div style="font-size: 12px; color: #cbd5e1;">
+                  Measured justification derived from independent simulation metrics:
+                </div>
+                <ul style="font-size: 11px; color: #94a3b8; margin-left: 18px; display: flex; flex-direction: column; gap: 2px;">
+                  ${bData.recommendation.reasons.map(r => `<li><strong style="color: white;">${r}</strong></li>`).join('')}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4-Way Side-by-Side Visual Memory Tracks -->
+          <div class="benchmark-grid">
+            ${[
+              { name: 'First Fit', res: f, id: 'first' },
+              { name: 'Best Fit', res: b, id: 'best' },
+              { name: 'Worst Fit', res: w, id: 'worst' },
+              { name: 'Next Fit', res: n, id: 'next' }
+            ].map(algo => `
+              <div class="benchmark-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
+                  <strong style="font-size: 13px; color: var(--primary-cyan);">${algo.name}</strong>
+                  <span style="font-size: 11px; font-family: 'Fira Code', monospace; color: ${algo.res.successfulAllocations === s.workload.length ? 'var(--accent-emerald)' : 'var(--accent-rose)'}; font-weight: 700;">
+                    ${algo.res.successfulAllocations}/${s.workload.length} Allocated (${algo.res.utilizationPct}%)
+                  </span>
+                </div>
+
+                <div class="benchmark-track">
+                  ${algo.res.finalBlocks.map(blk => {
+                    const widthPct = (blk.size / state.totalMemory) * 100;
+                    if (blk.status === 'os') {
+                      return `<div style="width: ${widthPct}%; height: 100%; background: #1e293b; border-right: 1px solid #334155; font-size: 9px; font-family: 'Fira Code', monospace; display: flex; align-items: center; justify-content: center; color: var(--primary-cyan);" title="OS Kernel">SYS</div>`;
+                    }
+                    if (blk.status === 'allocated') {
+                      return `<div style="width: ${widthPct}%; height: 100%; background: linear-gradient(135deg, #0e7490, #4338ca); border-right: 1px solid rgba(255,255,255,0.2); font-size: 9px; font-family: 'Fira Code', monospace; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; overflow: hidden;" title="${blk.processId}: ${blk.size} KB">${blk.processId}</div>`;
+                    }
+                    return `<div style="width: ${widthPct}%; height: 100%; background: #020617; border-right: 1px dashed #334155; font-size: 8px; font-family: 'Fira Code', monospace; display: flex; align-items: center; justify-content: center; color: #64748b;" title="Free: ${blk.size} KB">${blk.size}K</div>`;
+                  }).join('')}
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 10px; font-family: 'Fira Code', monospace; color: var(--text-muted);">
+                  <div>Search Steps: <strong style="color: var(--primary-indigo);">${algo.res.avgSearchSteps} / alloc</strong></div>
+                  <div>Ext Frag: <strong style="color: var(--accent-amber);">${algo.res.externalFrag} KB</strong></div>
+                  <div>Largest Hole: <strong style="color: var(--accent-emerald);">${algo.res.largestFreeHole} KB</strong></div>
+                  <div>Failures: <strong style="color: ${algo.res.failedAllocations > 0 ? 'var(--accent-rose)' : 'white'};">${algo.res.failedAllocations}</strong></div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Comprehensive Side-by-Side Comparison Metrics Table -->
+          <div class="card">
+            <div class="card-title">
+              <span>Dynamic Performance Comparison Metrics Table</span>
+              <span class="badge-tag">MEASURED SIMULATION DATA</span>
+            </div>
+
+            <div style="overflow-x: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Simulation Metric</th>
+                    <th style="text-align: right;">First Fit</th>
+                    <th style="text-align: right;">Best Fit</th>
+                    <th style="text-align: right;">Worst Fit</th>
+                    <th style="text-align: right;">Next Fit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Successful Allocations</strong></td>
+                    <td style="text-align: right; font-weight: 700;">${f.successfulAllocations} / ${s.workload.length} ${f.successfulAllocations === maxAlloc ? '<span class="badge-winner">BEST</span>' : ''}</td>
+                    <td style="text-align: right; font-weight: 700;">${b.successfulAllocations} / ${s.workload.length} ${b.successfulAllocations === maxAlloc ? '<span class="badge-winner">BEST</span>' : ''}</td>
+                    <td style="text-align: right; font-weight: 700;">${w.successfulAllocations} / ${s.workload.length} ${w.successfulAllocations === maxAlloc ? '<span class="badge-winner">BEST</span>' : ''}</td>
+                    <td style="text-align: right; font-weight: 700;">${n.successfulAllocations} / ${s.workload.length} ${n.successfulAllocations === maxAlloc ? '<span class="badge-winner">BEST</span>' : ''}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Failed Allocations</strong></td>
+                    <td style="text-align: right; color: ${f.failedAllocations > 0 ? 'var(--accent-rose)' : 'var(--accent-emerald)'}; font-weight: 700;">${f.failedAllocations}</td>
+                    <td style="text-align: right; color: ${b.failedAllocations > 0 ? 'var(--accent-rose)' : 'var(--accent-emerald)'}; font-weight: 700;">${b.failedAllocations}</td>
+                    <td style="text-align: right; color: ${w.failedAllocations > 0 ? 'var(--accent-rose)' : 'var(--accent-emerald)'}; font-weight: 700;">${w.failedAllocations}</td>
+                    <td style="text-align: right; color: ${n.failedAllocations > 0 ? 'var(--accent-rose)' : 'var(--accent-emerald)'}; font-weight: 700;">${n.failedAllocations}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>RAM Utilization %</strong></td>
+                    <td style="text-align: right; font-weight: 700; color: var(--primary-cyan);">${f.utilizationPct}% ${f.utilizationPct === maxUtil ? '<span class="badge-winner">MAX</span>' : ''}</td>
+                    <td style="text-align: right; font-weight: 700; color: var(--primary-cyan);">${b.utilizationPct}% ${b.utilizationPct === maxUtil ? '<span class="badge-winner">MAX</span>' : ''}</td>
+                    <td style="text-align: right; font-weight: 700; color: var(--primary-cyan);">${w.utilizationPct}% ${w.utilizationPct === maxUtil ? '<span class="badge-winner">MAX</span>' : ''}</td>
+                    <td style="text-align: right; font-weight: 700; color: var(--primary-cyan);">${n.utilizationPct}% ${n.utilizationPct === maxUtil ? '<span class="badge-winner">MAX</span>' : ''}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Total Free Memory (KB)</strong></td>
+                    <td style="text-align: right;">${f.totalFree} KB</td>
+                    <td style="text-align: right;">${b.totalFree} KB</td>
+                    <td style="text-align: right;">${w.totalFree} KB</td>
+                    <td style="text-align: right;">${n.totalFree} KB</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Largest Free Hole (KB)</strong></td>
+                    <td style="text-align: right; font-weight: 700;">${f.largestFreeHole} KB</td>
+                    <td style="text-align: right; font-weight: 700;">${b.largestFreeHole} KB</td>
+                    <td style="text-align: right; font-weight: 700;">${w.largestFreeHole} KB</td>
+                    <td style="text-align: right; font-weight: 700;">${n.largestFreeHole} KB</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Free Hole Count</strong></td>
+                    <td style="text-align: right;">${f.freeHoleCount}</td>
+                    <td style="text-align: right;">${b.freeHoleCount}</td>
+                    <td style="text-align: right;">${w.freeHoleCount}</td>
+                    <td style="text-align: right;">${n.freeHoleCount}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Internal Fragmentation (KB)</strong></td>
+                    <td style="text-align: right; color: var(--text-muted);">${f.internalFrag} KB</td>
+                    <td style="text-align: right; color: var(--text-muted);">${b.internalFrag} KB</td>
+                    <td style="text-align: right; color: var(--text-muted);">${w.internalFrag} KB</td>
+                    <td style="text-align: right; color: var(--text-muted);">${n.internalFrag} KB</td>
+                  </tr>
+                  <tr>
+                    <td><strong>External Fragmentation (KB)</strong></td>
+                    <td style="text-align: right; color: var(--accent-amber); font-weight: 700;">${f.externalFrag} KB ${f.externalFrag === minFrag ? '<span class="badge-winner">LOW</span>' : ''}</td>
+                    <td style="text-align: right; color: var(--accent-amber); font-weight: 700;">${b.externalFrag} KB ${b.externalFrag === minFrag ? '<span class="badge-winner">LOW</span>' : ''}</td>
+                    <td style="text-align: right; color: var(--accent-amber); font-weight: 700;">${w.externalFrag} KB ${w.externalFrag === minFrag ? '<span class="badge-winner">LOW</span>' : ''}</td>
+                    <td style="text-align: right; color: var(--accent-amber); font-weight: 700;">${n.externalFrag} KB ${n.externalFrag === minFrag ? '<span class="badge-winner">LOW</span>' : ''}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Total Search Steps</strong></td>
+                    <td style="text-align: right;">${f.totalSearchSteps} steps</td>
+                    <td style="text-align: right;">${b.totalSearchSteps} steps</td>
+                    <td style="text-align: right;">${w.totalSearchSteps} steps</td>
+                    <td style="text-align: right;">${n.totalSearchSteps} steps</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Average Search Steps / Allocation</strong></td>
+                    <td style="text-align: right; color: var(--primary-indigo); font-weight: 700;">${f.avgSearchSteps} ${f.avgSearchSteps === minSearch ? '<span class="badge-winner">FASTEST</span>' : ''}</td>
+                    <td style="text-align: right; color: var(--primary-indigo); font-weight: 700;">${b.avgSearchSteps} ${b.avgSearchSteps === minSearch ? '<span class="badge-winner">FASTEST</span>' : ''}</td>
+                    <td style="text-align: right; color: var(--primary-indigo); font-weight: 700;">${w.avgSearchSteps} ${w.avgSearchSteps === minSearch ? '<span class="badge-winner">FASTEST</span>' : ''}</td>
+                    <td style="text-align: right; color: var(--primary-indigo); font-weight: 700;">${n.avgSearchSteps} ${n.avgSearchSteps === minSearch ? '<span class="badge-winner">FASTEST</span>' : ''}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Fragmentation Failures</strong></td>
+                    <td style="text-align: right; color: ${f.fragFailures > 0 ? 'var(--accent-rose)' : 'var(--accent-emerald)'}; font-weight: 700;">${f.fragFailures}</td>
+                    <td style="text-align: right; color: ${b.fragFailures > 0 ? 'var(--accent-rose)' : 'var(--accent-emerald)'}; font-weight: 700;">${b.fragFailures}</td>
+                    <td style="text-align: right; color: ${w.fragFailures > 0 ? 'var(--accent-rose)' : 'var(--accent-emerald)'}; font-weight: 700;">${w.fragFailures}</td>
+                    <td style="text-align: right; color: ${n.fragFailures > 0 ? 'var(--accent-rose)' : 'var(--accent-emerald)'}; font-weight: 700;">${n.fragFailures}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Compaction Performed?</strong></td>
+                    <td style="text-align: right; color: var(--text-muted);">NO (Benchmark)</td>
+                    <td style="text-align: right; color: var(--text-muted);">NO (Benchmark)</td>
+                    <td style="text-align: right; color: var(--text-muted);">NO (Benchmark)</td>
+                    <td style="text-align: right; color: var(--text-muted);">NO (Benchmark)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Comparative Charts Section -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+            <!-- RAM Utilization Chart -->
+            <div class="card">
+              <div class="card-title"><span>RAM Utilization % Chart</span></div>
+              <div class="chart-bar-container">
+                ${[
+                  { label: 'First Fit', val: f.utilizationPct, color: 'var(--primary-cyan)' },
+                  { label: 'Best Fit', val: b.utilizationPct, color: 'var(--accent-emerald)' },
+                  { label: 'Worst Fit', val: w.utilizationPct, color: 'var(--accent-rose)' },
+                  { label: 'Next Fit', val: n.utilizationPct, color: 'var(--primary-indigo)' }
+                ].map(item => `
+                  <div class="chart-row">
+                    <span class="chart-label">${item.label}:</span>
+                    <div class="chart-bar-bg">
+                      <div class="chart-bar-fill" style="width: ${item.val}%; background-color: ${item.color};"></div>
+                    </div>
+                    <span class="chart-val" style="color: ${item.color};">${item.val}%</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- Average Search Steps / Allocation Chart -->
+            <div class="card">
+              <div class="card-title"><span>Average Search Steps / Alloc Chart</span></div>
+              <div class="chart-bar-container">
+                ${[
+                  { label: 'First Fit', val: f.avgSearchSteps, color: 'var(--primary-cyan)' },
+                  { label: 'Best Fit', val: b.avgSearchSteps, color: 'var(--accent-emerald)' },
+                  { label: 'Worst Fit', val: w.avgSearchSteps, color: 'var(--accent-rose)' },
+                  { label: 'Next Fit', val: n.avgSearchSteps, color: 'var(--primary-indigo)' }
+                ].map(item => {
+                  const maxSearchVal = Math.max(f.avgSearchSteps, b.avgSearchSteps, w.avgSearchSteps, n.avgSearchSteps, 1);
+                  const pct = (item.val / maxSearchVal) * 100;
+                  return `
+                    <div class="chart-row">
+                      <span class="chart-label">${item.label}:</span>
+                      <div class="chart-bar-bg">
+                        <div class="chart-bar-fill" style="width: ${pct}%; background-color: ${item.color};"></div>
+                      </div>
+                      <span class="chart-val" style="color: ${item.color};">${item.val}</span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <!-- External Fragmentation (KB) Chart -->
+            <div class="card">
+              <div class="card-title"><span>External Fragmentation (KB) Chart</span></div>
+              <div class="chart-bar-container">
+                ${[
+                  { label: 'First Fit', val: f.externalFrag, color: 'var(--accent-amber)' },
+                  { label: 'Best Fit', val: b.externalFrag, color: 'var(--accent-emerald)' },
+                  { label: 'Worst Fit', val: w.externalFrag, color: 'var(--accent-rose)' },
+                  { label: 'Next Fit', val: n.externalFrag, color: 'var(--primary-indigo)' }
+                ].map(item => {
+                  const maxFrag = Math.max(f.externalFrag, b.externalFrag, w.externalFrag, n.externalFrag, 1);
+                  const pct = (item.val / maxFrag) * 100;
+                  return `
+                    <div class="chart-row">
+                      <span class="chart-label">${item.label}:</span>
+                      <div class="chart-bar-bg">
+                        <div class="chart-bar-fill" style="width: ${pct}%; background-color: ${item.color};"></div>
+                      </div>
+                      <span class="chart-val" style="color: ${item.color};">${item.val} KB</span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+
+          <!-- Real Execution Search Trace Drawer -->
+          <div class="card">
+            <div class="card-title">
+              <span>Real Algorithm Search Trace Log (Independent Inspection Console)</span>
+              <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                ${['first', 'best', 'worst', 'next'].map(algo => `
+                  <button class="btn" style="padding: 4px 10px; font-size: 10px; ${state.benchmarkActiveTraceAlgo === algo ? 'background: var(--primary-cyan); color: #020617; border-color: var(--primary-cyan); font-weight: 800;' : ''}" onclick="state.benchmarkActiveTraceAlgo = '${algo}'; renderApp();">
+                    ${algo.toUpperCase()} FIT TRACE
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="console-log" style="height: 220px;">
+              ${bData[state.benchmarkActiveTraceAlgo].traceLogs.map(l => {
+                let color = '#94a3b8';
+                if (l.includes('[SUCCESS]')) color = '#10b981';
+                if (l.includes('🚨') || l.includes('[FAILED]') || l.includes('⚠')) color = '#f43f5e';
+                if (l.includes('[SEARCH]') || l.includes('===')) color = '#38bdf8';
+                if (l.includes('[SELECT]')) color = '#f59e0b';
+                return `<div style="color: ${color};">${l}</div>`;
+              }).join('')}
+            </div>
+          </div>
+        `;
       }
 
-      renderCompareView(enginesMap) {
-        const tbody = document.getElementById('compareSummaryTbody');
-        if (tbody) tbody.innerHTML = '';
+      // ===================================
+      // VIEW C: EXPERIMENT MODE (7 LABS)
+      // ===================================
+      else if (state.activeTab === 'experiments') {
+        const currentExp = LAB_EXPERIMENTS[state.selectedExpIndex];
+        viewport.innerHTML = `
+          <div style="display: grid; grid-template-columns: 320px 1fr; gap: 24px;">
+            <!-- Left Experiments List -->
+            <div class="card" style="padding: 16px;">
+              <div class="card-title">
+                <span>OS Laboratory Experiments (7)</span>
+                <span class="badge-tag">LAB LIST</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                ${LAB_EXPERIMENTS.map((exp, idx) => `
+                  <button onclick="state.selectedExpIndex = ${idx}; renderApp();" style="text-align: left; padding: 10px 12px; border-radius: 8px; border: 1px solid ${state.selectedExpIndex === idx ? 'var(--primary-cyan)' : '#1e293b'}; background: ${state.selectedExpIndex === idx ? 'rgba(6, 182, 212, 0.1)' : '#020617'}; color: ${state.selectedExpIndex === idx ? 'var(--primary-cyan)' : '#cbd5e1'}; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                    ${exp.title}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
 
-        ['first', 'best', 'worst', 'next'].forEach(algo => {
-          const engine = enginesMap[algo];
-          if (!engine) return;
+            <!-- Right Experiment Details -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+              <div class="card">
+                <div class="card-title">
+                  <span>${currentExp.title}</span>
+                  <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-cyan btn-sm" onclick="loadExperiment(${state.selectedExpIndex}, true)">▶ Run Experiment in Simulator</button>
+                    <button class="btn btn-sm" onclick="loadExperiment(${state.selectedExpIndex}, false)">Set Up Simulator</button>
+                  </div>
+                </div>
 
-          const trackEl = document.getElementById(`track-${algo}`);
-          const badgeEl = document.getElementById(`badge-${algo}`);
-          const intEl = document.getElementById(`int-${algo}`);
-          const extEl = document.getElementById(`ext-${algo}`);
-          const freeEl = document.getElementById(`free-${algo}`);
+                <div style="display: flex; flex-direction: column; gap: 14px; font-size: 12px;">
+                  <div>
+                    <strong style="color: var(--primary-cyan); text-transform: uppercase; font-size: 11px;">Objective:</strong>
+                    <p style="color: #cbd5e1; margin-top: 2px;">${currentExp.objective}</p>
+                  </div>
 
-          if (trackEl) {
-            this.renderMemoryTrack(engine, trackEl);
-          }
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                    <div style="background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 8px 12px;">
+                      <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Scheme:</span>
+                      <div style="font-weight: 700; color: white;">${currentExp.scheme.toUpperCase()}</div>
+                    </div>
+                    <div style="background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 8px 12px;">
+                      <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Algorithm:</span>
+                      <div style="font-weight: 700; color: white;">${currentExp.algorithm.toUpperCase()} FIT</div>
+                    </div>
+                  </div>
 
-          const m = engine.getMetrics();
-          if (badgeEl) badgeEl.textContent = `${m.succeeded}/${m.totalRequested} Succeeded`;
-          if (intEl) intEl.textContent = `${m.internalFrag} KB`;
-          if (extEl) extEl.textContent = `${m.externalFrag} KB`;
-          if (freeEl) freeEl.textContent = `${m.freeRam} KB`;
+                  <div>
+                    <strong style="color: var(--accent-amber); text-transform: uppercase; font-size: 11px;">Workload Actions:</strong>
+                    <div style="margin-top: 6px; border: 1px solid #1e293b; border-radius: 8px; overflow: hidden;">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Step</th>
+                            <th>Action Type</th>
+                            <th>Process ID</th>
+                            <th>Size (KB)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${currentExp.actions.map((act, i) => `
+                            <tr>
+                              <td>Step ${i + 1}</td>
+                              <td style="color: ${act.type === 'allocate' ? 'var(--accent-emerald)' : act.type === 'deallocate' ? 'var(--accent-rose)' : 'var(--accent-amber)'}; font-weight: 700;">${act.type.toUpperCase()}</td>
+                              <td>${act.id}</td>
+                              <td>${act.size ? act.size + ' KB' : '—'}</td>
+                            </tr>
+                          `).join('')}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
 
-          if (tbody) {
-            const tr = document.createElement('tr');
-            const algoName = algo === 'first' ? 'First Fit' : (algo === 'best' ? 'Best Fit' : (algo === 'worst' ? 'Worst Fit' : 'Next Fit'));
-            tr.innerHTML = `
-              <td><strong>${algoName}</strong></td>
-              <td>${m.succeeded}/${m.totalRequested} (${m.totalRequested > 0 ? Math.round((m.succeeded/m.totalRequested)*100) : 100}%)</td>
-              <td>${m.freeHolesCount} hole${m.freeHolesCount === 1 ? '' : 's'}</td>
-              <td>${m.internalFrag} KB</td>
-              <td>${m.externalFrag} KB</td>
-              <td>${m.avgSearchSteps} steps/req</td>
-            `;
-            tbody.appendChild(tr);
-          }
-        });
+                  <div style="background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 10px; padding: 12px;">
+                    <strong style="color: var(--primary-cyan); font-size: 11px; text-transform: uppercase;">Expected Academic Concept:</strong>
+                    <p style="color: #e2e8f0; margin-top: 2px;">${currentExp.expectedConcept}</p>
+                  </div>
+
+                  <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 12px;">
+                    <strong style="color: var(--accent-amber); font-size: 11px; text-transform: uppercase;">Observed Behavior:</strong>
+                    <p style="color: #e2e8f0; margin-top: 2px;">${currentExp.observation}</p>
+                  </div>
+
+                  <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 12px;">
+                    <strong style="color: var(--accent-emerald); font-size: 11px; text-transform: uppercase;">Laboratory Conclusion:</strong>
+                    <p style="color: #e2e8f0; margin-top: 2px;">${currentExp.conclusion}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
       }
     }
 
-    /* Master Controller Application */
-    class Application {
-      constructor() {
-        this.engine = new MemoryEngine(1024, 128);
-        this.ui = new UIRenderer();
-
-        this.compareEngines = {
-          first: new MemoryEngine(1024, 128),
-          best: new MemoryEngine(1024, 128),
-          worst: new MemoryEngine(1024, 128),
-          next: new MemoryEngine(1024, 128)
-        };
-
-        this.activeView = 'single';
-        this.actionQueue = [];
-        this.processCounter = 1;
-        this.simulationTimer = null;
-        this.simSpeed = 800;
-
-        this.initEventListeners();
-        this.loadStateFromLocalStorage();
-        this.updateAll();
-      }
-
-      initEventListeners() {
-        const schemeSelect = document.getElementById('partitionScheme');
-        const algoSelect = document.getElementById('fitAlgorithm');
-
-        schemeSelect.addEventListener('change', (e) => {
-          const scheme = e.target.value;
-          const algo = algoSelect.value;
-          this.engine.setConfiguration(scheme, algo);
-
-          Object.keys(this.compareEngines).forEach(key => {
-            this.compareEngines[key].setConfiguration(scheme, key);
-          });
-
-          this.ui.appendLog(`Changed partition scheme to: ${scheme.toUpperCase()}`, 'info');
-          this.saveStateToLocalStorage();
-          this.updateAll();
-        });
-
-        algoSelect.addEventListener('change', (e) => {
-          const algo = e.target.value;
-          const scheme = schemeSelect.value;
-          this.engine.setConfiguration(scheme, algo);
-          this.ui.appendLog(`Changed placement algorithm to: ${algo.toUpperCase()} FIT`, 'info');
-          this.saveStateToLocalStorage();
-          this.updateAll();
-        });
-
-        document.getElementById('compactBtn').addEventListener('click', () => {
-          this.compactMemory();
-        });
-
-        document.getElementById('resetBtn').addEventListener('click', () => {
-          this.resetMemory();
-        });
-
-        document.getElementById('addProcessForm').addEventListener('submit', (e) => {
-          e.preventDefault();
-          const nameInput = document.getElementById('procName');
-          const sizeInput = document.getElementById('procSize');
-
-          const name = nameInput.value.trim() || `P${this.processCounter}`;
-          const size = parseInt(sizeInput.value, 10);
-
-          if (size <= 0 || size > (this.engine.totalSize - this.engine.osSize)) {
-            this.ui.showInlineError(`Process size ${size} KB is invalid! Maximum user space is 896 KB.`);
-            return;
-          }
-
-          this.allocateProcess(name, size);
-          this.processCounter++;
-          nameInput.value = `P${this.processCounter}`;
-        });
-
-        const singleViewBtn = document.getElementById('singleViewBtn');
-        const compareViewBtn = document.getElementById('compareViewBtn');
-        const singleContainer = document.getElementById('singleMapContainer');
-        const compareContainer = document.getElementById('compareMapContainer');
-
-        singleViewBtn.addEventListener('click', () => {
-          this.activeView = 'single';
-          singleViewBtn.classList.add('active');
-          compareViewBtn.classList.remove('active');
-          singleContainer.classList.remove('hidden');
-          singleContainer.classList.add('active');
-          compareContainer.classList.add('hidden');
-          compareContainer.classList.remove('active');
-          this.updateAll();
-        });
-
-        compareViewBtn.addEventListener('click', () => {
-          this.activeView = 'compare';
-          compareViewBtn.classList.add('active');
-          singleViewBtn.classList.remove('active');
-          compareContainer.classList.remove('hidden');
-          compareContainer.classList.add('active');
-          singleContainer.classList.add('hidden');
-          singleContainer.classList.remove('active');
-          this.updateAll();
-        });
-
-        const linearMapTab = document.getElementById('linearMapTab');
-        const matrixMapTab = document.getElementById('matrixMapTab');
-        const linearTrackView = document.getElementById('linearTrackView');
-        const matrixFrameView = document.getElementById('matrixFrameView');
-
-        linearMapTab.addEventListener('click', () => {
-          linearMapTab.classList.add('active');
-          matrixMapTab.classList.remove('active');
-          linearTrackView.classList.remove('hidden');
-          matrixFrameView.classList.add('hidden');
-        });
-
-        matrixMapTab.addEventListener('click', () => {
-          matrixMapTab.classList.add('active');
-          linearMapTab.classList.remove('active');
-          matrixFrameView.classList.remove('hidden');
-          linearTrackView.classList.add('hidden');
-        });
-
-        document.querySelectorAll('.btn-preset').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const presetKey = btn.getAttribute('data-preset');
-            this.loadPreset(presetKey);
-          });
-        });
-
-        const stepBtn = document.getElementById('stepBtn');
-        const playBtn = document.getElementById('playBtn');
-        const pauseBtn = document.getElementById('pauseBtn');
-        const speedSlider = document.getElementById('speedSlider');
-
-        stepBtn.addEventListener('click', () => this.stepSimulation());
-        playBtn.addEventListener('click', () => this.startSimulation());
-        pauseBtn.addEventListener('click', () => this.pauseSimulation());
-
-        speedSlider.addEventListener('input', (e) => {
-          this.simSpeed = parseInt(e.target.value, 10);
-          if (this.simulationTimer) {
-            this.pauseSimulation();
-            this.startSimulation();
-          }
-        });
-
-        document.getElementById('clearLogBtn').addEventListener('click', () => {
-          this.ui.clearLog();
-        });
-
-        document.getElementById('exportReportBtn').addEventListener('click', () => {
-          window.print();
-        });
-      }
-
-      allocateProcess(processId, reqSize) {
-        const result = this.engine.allocate(processId, reqSize);
-
-        Object.keys(this.compareEngines).forEach(key => {
-          this.compareEngines[key].allocate(processId, reqSize);
-        });
-
-        if (result.logs) {
-          result.logs.forEach(log => {
-            const logType = result.success ? 'success' : (result.externalFragDetected ? 'danger' : 'warning');
-            this.ui.appendLog(log, logType);
-          });
-        }
-
-        this.saveStateToLocalStorage();
-        this.updateAll(result);
-        return result;
-      }
-
-      deallocateProcess(processId) {
-        const result = this.engine.deallocate(processId);
-
-        Object.keys(this.compareEngines).forEach(key => {
-          this.compareEngines[key].deallocate(processId);
-        });
-
-        if (result.logs) {
-          result.logs.forEach(log => this.ui.appendLog(log, 'info'));
-        }
-
-        this.saveStateToLocalStorage();
-        this.updateAll();
-      }
-
-      compactMemory() {
-        const result = this.engine.compactMemory();
-
-        Object.keys(this.compareEngines).forEach(key => {
-          this.compareEngines[key].compactMemory();
-        });
-
-        if (result.logs) {
-          result.logs.forEach(log => this.ui.appendLog(log, 'warning'));
-        } else if (result.reason) {
-          this.ui.appendLog(`Compaction skipped: ${result.reason}`, 'info');
-        }
-
-        this.saveStateToLocalStorage();
-        this.updateAll();
-      }
-
-      resetMemory() {
-        this.pauseSimulation();
-        this.actionQueue = [];
-        this.processCounter = 1;
-        document.getElementById('procName').value = 'P1';
-
-        const scheme = document.getElementById('partitionScheme').value;
-        const algo = document.getElementById('fitAlgorithm').value;
-
-        this.engine.setConfiguration(scheme, algo);
-
-        Object.keys(this.compareEngines).forEach(key => {
-          this.compareEngines[key].setConfiguration(scheme, key);
-        });
-
-        localStorage.removeItem('memmap_state');
-
-        this.ui.clearLog();
-        this.ui.appendLog('Main Memory reset to initial state.', 'info');
-        this.updateAll();
-      }
-
-      loadPreset(presetKey) {
-        const preset = PRESET_SCENARIOS[presetKey];
-        if (!preset) return;
-
-        this.pauseSimulation();
-        this.resetMemory();
-
-        document.getElementById('partitionScheme').value = preset.scheme;
-        document.getElementById('fitAlgorithm').value = preset.algorithm;
-
-        this.engine.setConfiguration(preset.scheme, preset.algorithm);
-        Object.keys(this.compareEngines).forEach(key => {
-          this.compareEngines[key].setConfiguration(preset.scheme, key);
-        });
-
-        this.actionQueue = [...preset.actions];
-
-        this.ui.appendLog(`--- Loaded Academic Scenario: ${preset.title} ---`, 'info');
-        this.ui.appendLog(preset.description, 'info');
-
-        this.updateAll();
-      }
-
-      stepSimulation() {
-        if (this.actionQueue.length === 0) {
-          this.ui.appendLog('Queue empty. Add more processes or select a preset scenario.', 'info');
-          this.pauseSimulation();
-          return;
-        }
-
-        const action = this.actionQueue.shift();
-        if (action.type === 'allocate') {
-          this.allocateProcess(action.id, action.size);
-        } else if (action.type === 'deallocate') {
-          this.deallocateProcess(action.id);
-        } else if (action.type === 'compact') {
-          this.compactMemory();
-        }
-      }
-
-      startSimulation() {
-        if (this.simulationTimer) return;
-
-        document.getElementById('playBtn').classList.add('hidden');
-        document.getElementById('pauseBtn').classList.remove('hidden');
-
-        this.simulationTimer = setInterval(() => {
-          if (this.actionQueue.length > 0) {
-            this.stepSimulation();
-          } else {
-            this.pauseSimulation();
-          }
-        }, this.simSpeed);
-      }
-
-      pauseSimulation() {
-        if (this.simulationTimer) {
-          clearInterval(this.simulationTimer);
-          this.simulationTimer = null;
-        }
-        document.getElementById('playBtn').classList.remove('hidden');
-        document.getElementById('pauseBtn').classList.add('hidden');
-      }
-
-      saveStateToLocalStorage() {
-        try {
-          const state = {
-            scheme: this.engine.scheme,
-            algorithm: this.engine.algorithm,
-            blocks: this.engine.blocks,
-            processes: this.engine.processes,
-            processCounter: this.processCounter
-          };
-          localStorage.setItem('memmap_state', JSON.stringify(state));
-        } catch (e) {}
-      }
-
-      loadStateFromLocalStorage() {
-        try {
-          const saved = localStorage.getItem('memmap_state');
-          if (saved) {
-            const state = JSON.parse(saved);
-            this.engine.scheme = state.scheme || 'dynamic';
-            this.engine.algorithm = state.algorithm || 'first';
-            document.getElementById('partitionScheme').value = this.engine.scheme;
-            document.getElementById('fitAlgorithm').value = this.engine.algorithm;
-            if (state.blocks) this.engine.blocks = state.blocks;
-            if (state.processes) this.engine.processes = state.processes;
-            if (state.processCounter) this.processCounter = state.processCounter;
-          }
-        } catch (e) {}
-      }
-
-      updateAll(lastResult = null) {
-        if (this.activeView === 'single') {
-          this.ui.renderAll(this.engine, lastResult);
-        } else {
-          this.ui.renderCompareView(this.compareEngines);
-        }
-      }
-    }
-
-    let app = null;
-    document.addEventListener('DOMContentLoaded', () => {
-      app = new Application();
-    });
+    // --- 7. INITIAL BOOTSTRAP ---
+    initMemory();
+    renderApp();
   </script>
 </body>
 </html>
