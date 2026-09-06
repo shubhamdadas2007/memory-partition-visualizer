@@ -78,7 +78,7 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: 8,
     question: 'What operation is performed when two adjacent free memory holes are merged into a single larger hole?',
-    options: ['Paging', 'Coalescing', 'Swapping', 'Thrashing'],
+    options: ['Compaction', 'Coalescing', 'Swapping', 'Splitting'],
     answer: 1,
     explanation: 'Coalescing automatically merges adjacent free holes upon process deallocation to combine contiguous free space.'
   },
@@ -88,7 +88,7 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
     options: [
       'Deleting processes from memory',
       'Relocating active processes toward low memory to combine all scattered free holes into one large contiguous block',
-      'Encrypting memory pages',
+      'Relocating processes to low memory',
       'Compressing process data files'
     ],
     answer: 1,

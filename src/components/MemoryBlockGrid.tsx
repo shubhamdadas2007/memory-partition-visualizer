@@ -13,7 +13,7 @@ export const MemoryBlockGrid: React.FC<MemoryBlockGridProps> = ({
   totalRam,
   onSelectBlock
 }) => {
-  const totalGridBlocks = 64; // 1024 KB / 16 KB per frame/block
+  const totalGridBlocks = 64; // 1024 KB / 16 KB per block unit
   const blockSizeKb = totalRam / totalGridBlocks; // 16 KB
 
   const gridCells = [];
@@ -35,7 +35,7 @@ export const MemoryBlockGrid: React.FC<MemoryBlockGridProps> = ({
         <div className="flex items-center gap-2">
           <Grid className="w-4 h-4 text-cyan-400" />
           <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-            Memory Block Partition Overview (64 Units @ {blockSizeKb} KB per Block Unit)
+            Memory Block Overview — Visual Granularity: {blockSizeKb} KB (64 Units)
           </h4>
         </div>
         <span className="text-[11px] font-mono text-slate-400">

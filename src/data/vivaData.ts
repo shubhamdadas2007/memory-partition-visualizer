@@ -68,7 +68,7 @@ export const VIVA_QUESTIONS: VivaQuestion[] = [
     id: 10,
     category: 'Hard',
     topic: 'System Design',
-    question: 'Why is paging preferred over contiguous dynamic partitioning in modern Operating Systems?',
-    answer: 'Paging eliminates external fragmentation entirely by dividing physical memory into fixed-size frames and logical memory into pages. This avoids the need for expensive memory compaction and allows processes to be loaded into non-contiguous physical memory frames.'
+    question: 'How does non-contiguous allocation compare to contiguous dynamic partitioning in modern Operating Systems?',
+    answer: 'Non-contiguous allocation eliminates external fragmentation. Contiguous allocation requires variable contiguous memory blocks, making it subject to external fragmentation.l memory into pages. This avoids the need for expensive memory compaction and allows processes to be loaded into non-contiguous physical memory frames.'
   }
 ];

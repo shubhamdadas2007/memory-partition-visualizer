@@ -880,25 +880,26 @@
       if (scenarioKey === 'fragmented') {
         const initialBlocks = [
           { id: 'b-os', startAddr: 0, endAddr: 128, size: 128, status: 'os', processId: 'OS Kernel', reqSize: 128, internalFrag: 0 },
-          { id: 'b-p1', startAddr: 128, endAddr: 228, size: 100, status: 'allocated', processId: 'P1', reqSize: 100, internalFrag: 0 },
+          { id: 'b-p1', startAddr: 128, endAddr: 228, size: 100, status: 'allocated', processId: 'P_Base1', reqSize: 100, internalFrag: 0 },
           { id: 'b-h1', startAddr: 228, endAddr: 348, size: 120, status: 'free', internalFrag: 0 },
-          { id: 'b-p2', startAddr: 348, endAddr: 498, size: 150, status: 'allocated', processId: 'P2', reqSize: 150, internalFrag: 0 },
+          { id: 'b-p2', startAddr: 348, endAddr: 498, size: 150, status: 'allocated', processId: 'P_Base2', reqSize: 150, internalFrag: 0 },
           { id: 'b-h2', startAddr: 498, endAddr: 748, size: 250, status: 'free', internalFrag: 0 },
-          { id: 'b-p3', startAddr: 748, endAddr: 848, size: 100, status: 'allocated', processId: 'P3', reqSize: 100, internalFrag: 0 },
-          { id: 'b-h3', startAddr: 848, endAddr: 1024, size: 176, status: 'free', internalFrag: 0 }
+          { id: 'b-p3', startAddr: 748, endAddr: 844, size: 96, status: 'allocated', processId: 'P_Base3', reqSize: 96, internalFrag: 0 },
+          { id: 'b-h3', startAddr: 844, endAddr: 1024, size: 180, status: 'free', internalFrag: 0 }
         ];
 
         const workload = [
-          { id: 'P4', size: 110, name: 'Process 4' },
-          { id: 'P5', size: 170, name: 'Process 5' },
-          { id: 'P6', size: 220, name: 'Process 6' },
-          { id: 'P7', size: 130, name: 'Process 7' }
+          { id: 'P1', size: 120, name: 'Process 1' },
+          { id: 'P2', size: 250, name: 'Process 2' },
+          { id: 'P3', size: 80, name: 'Process 3' },
+          { id: 'P4', size: 170, name: 'Process 4' },
+          { id: 'P5', size: 220, name: 'Process 5' }
         ];
 
         return {
           key: 'fragmented',
-          name: 'Fragmentation Benchmark Scenario (Multiple Diverse Holes: 120 KB, 250 KB, 176 KB)',
-          description: 'Initial memory contains 3 non-contiguous holes (120 KB, 250 KB, 176 KB). Clearly demonstrates how First, Best, Worst, and Next Fit make fundamentally different placement decisions and reveals external fragmentation failure.',
+          name: 'Fragmentation Benchmark Scenario (Holes: 120 KB, 250 KB, 180 KB)',
+          description: 'Initial memory contains 3 diverse non-contiguous holes (120 KB, 250 KB, 180 KB). Evaluates how First Fit, Best Fit, Worst Fit, and Next Fit place processes P1 (120 KB) through P5 (220 KB), demonstrating external fragmentation and search costs.',
           initialBlocks,
           initialPointer: 128,
           workload
@@ -1141,11 +1142,17 @@
             }
           });
 
+          let freeCount = freeHoles.length;
           if (currentFreeSum >= proc.size && currentLargest < proc.size) {
             fragFailures++;
-            traceLogs.push(`⚠ [EXTERNAL FRAGMENTATION ALLOCATION FAILURE]`);
-            traceLogs.push(`  Required: ${proc.size} KB | Total Free RAM: ${currentFreeSum} KB | Largest Contiguous Hole: ${currentLargest} KB`);
-            traceLogs.push(`  Reason: Enough total memory exists, but no single contiguous hole is large enough.`);
+            traceLogs.push(`🚨 [EXTERNAL FRAGMENTATION ALLOCATION FAILURE]`);
+            traceLogs.push(`   Process: ${proc.id} | Required: ${proc.size} KB | Contiguous Hole Needed: >= ${proc.size} KB`);
+            traceLogs.push(`   Total Free RAM: ${currentFreeSum} KB | Largest Available Hole: ${currentLargest} KB (${freeCount} scattered holes)`);
+            traceLogs.push(`   Academic Explanation: Sufficient total free memory (${currentFreeSum} KB >= ${proc.size} KB) exists, but memory is fragmented across multiple holes with no single hole large enough. Memory compaction is required.`);
+          } else {
+            traceLogs.push(`🚨 [INSUFFICIENT MEMORY ALLOCATION FAILURE]`);
+            traceLogs.push(`   Process: ${proc.id} | Required: ${proc.size} KB | Total Free RAM: ${currentFreeSum} KB`);
+            traceLogs.push(`   Academic Explanation: Total system free RAM (${currentFreeSum} KB) is less than the requested size (${proc.size} KB). Compaction cannot resolve this failure.`);
           }
         }
       });
@@ -1519,12 +1526,12 @@
               <!-- 64 Block Overview Grid Card -->
               <div class="card">
                 <div class="card-title">
-                  <span>Memory Block Overview Grid — 64 Units @ 16 KB per Unit</span>
+                  <span>Memory Block Overview — Visual Granularity: 16 KB (64 Units)</span>
                   <span class="badge-tag">OVERVIEW</span>
                 </div>
 
                 <div class="academic-note">
-                  <span>💡 <strong>Academic Representation:</strong> Grid displays physical memory divided into 64 uniform units (16 KB each). Continuous process allocations span across cells according to exact physical KB address boundaries.</span>
+                  <span>💡 <strong>Academic Representation:</strong> Grid displays contiguous physical memory partitioned into 64 uniform monitoring units (16 KB each). Continuous process allocations span across consecutive physical address boundaries (NOT paging/frames).</span>
                 </div>
 
                 <div class="block-grid">
@@ -1640,7 +1647,7 @@
             <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
               <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Benchmark Workload Scenario:</span>
               <select onchange="runBenchmark(this.value);" style="max-width: 540px;">
-                <option value="fragmented" ${state.benchmarkScenario === 'fragmented' ? 'selected' : ''}>Fragmentation Benchmark Scenario (Multiple Diverse Holes: 120K, 250K, 176K)</option>
+                <option value="fragmented" ${state.benchmarkScenario === 'fragmented' ? 'selected' : ''}>Fragmentation Benchmark Scenario (Holes: 120 KB, 250 KB, 180 KB | Workload: P1–P5)</option>
                 <option value="basic" ${state.benchmarkScenario === 'basic' ? 'selected' : ''}>Basic Sequential Scenario (Single 896 KB Hole)</option>
                 <option value="current-workload" ${state.benchmarkScenario === 'current-workload' ? 'selected' : ''}>Live Simulator Workload (Compares placement of current active processes)</option>
                 <option value="random" ${state.benchmarkScenario === 'random' ? 'selected' : ''}>Random Multi-Hole Workload Scenario</option>
@@ -1649,13 +1656,61 @@
             <p style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">${s.description}</p>
           </div>
 
+          <!-- Visible Benchmark Input Card -->
+          <div class="card" style="border: 1px solid rgba(6, 182, 212, 0.4); background-color: #020617;">
+            <div class="card-title">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="color: var(--primary-cyan); font-weight: 800; font-size: 13px;">📋 BENCHMARK INPUT</span>
+                <span class="badge-tag">EVALUATION BASELINE</span>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <span style="font-size: 10px; font-family: 'Fira Code', monospace; color: var(--accent-emerald); background: rgba(16, 185, 129, 0.15); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--accent-emerald);">Same workload used for all 4 algorithms ✓</span>
+                <span style="font-size: 10px; font-family: 'Fira Code', monospace; color: var(--primary-cyan); background: rgba(6, 182, 212, 0.15); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--primary-cyan);">Independent simulation states (cloned) ✓</span>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; font-family: 'Fira Code', monospace; font-size: 11px;">
+              <!-- Memory Parameters -->
+              <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px;">
+                <div style="font-size: 10px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">Memory Configuration</div>
+                <div><strong>RAM:</strong> 1024 KB (0x0400)</div>
+                <div><strong>OS Reserved:</strong> 128 KB (0x0000 — 0x0080)</div>
+                <div><strong>Available User RAM:</strong> 896 KB</div>
+                <div><strong>Mode:</strong> Dynamic Partitioning</div>
+                <div style="margin-top: 4px; padding-top: 6px; border-top: 1px solid #1e293b; font-size: 10px; color: #94a3b8;">
+                  <strong>Initial Free Holes:</strong> ${s.initialBlocks.filter(b => b.status === 'free').map(b => `${b.size} KB (${b.startAddr}–${b.endAddr} KB)`).join(', ')}
+                </div>
+              </div>
+
+              <!-- Workload Queue -->
+              <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px;">
+                <div style="font-size: 10px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">
+                  Workload:
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
+                  ${s.workload.map(p => `
+                    <div style="background-color: #020617; border: 1px solid #334155; border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
+                      <strong style="color: var(--primary-cyan); font-size: 12px;">${p.id}</strong>
+                      <span style="color: white; font-weight: bold;">${p.size} KB</span>
+                    </div>
+                  `).join('')}
+                </div>
+                <div style="margin-top: 4px; font-size: 10px; color: var(--text-muted); display: flex; justify-content: space-between;">
+                  <span>Total Process Demand: <strong>${s.workload.reduce((sum, p) => sum + p.size, 0)} KB</strong></span>
+                  <span style="color: var(--accent-emerald);">Initial Free Sum: <strong>${s.initialBlocks.filter(b => b.status === 'free').reduce((sum, b) => sum + b.size, 0)} KB</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
           <!-- Dynamic Recommendation Banner Card -->
           <div class="card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 27, 75, 0.7)); border-color: rgba(99, 102, 241, 0.5);">
             <div style="display: flex; align-items: flex-start; gap: 14px;">
               <div style="font-size: 32px; line-height: 1;">🏆</div>
               <div style="display: flex; flex-direction: column; gap: 6px;">
                 <div style="font-size: 15px; font-weight: 800; color: white;">
-                  RECOMMENDED ALGORITHM FOR THIS WORKLOAD: <span style="color: var(--primary-cyan); text-transform: uppercase;">${bData.recommendation.algo}</span>
+                  RECOMMENDED: <span style="color: var(--primary-cyan); text-transform: uppercase;">${bData.recommendation.algo} — Best for this workload</span>
                 </div>
                 <div style="font-size: 12px; color: #cbd5e1;">
                   Measured justification derived from independent simulation metrics:
@@ -1663,6 +1718,9 @@
                 <ul style="font-size: 11px; color: #94a3b8; margin-left: 18px; display: flex; flex-direction: column; gap: 2px;">
                   ${bData.recommendation.reasons.map(r => `<li><strong style="color: white;">${r}</strong></li>`).join('')}
                 </ul>
+                <div class="academic-note" style="margin-top: 10px; border-color: rgba(99, 102, 241, 0.4); background: rgba(15, 23, 42, 0.6);">
+                  <span>🎓 <strong>Viva Defense Note:</strong> We specify that <em>${bData.recommendation.algo}</em> is best for this specific workload, rather than making a generalized claim. In Operating Systems, First Fit provides the fastest allocation for early requests, Best Fit minimizes immediate residual fragmentation, Worst Fit retains larger reusable holes, and Next Fit distributes allocations across memory. Performance is strictly workload-dependent.</span>
+                </div>
               </div>
             </div>
           </div>

@@ -129,7 +129,7 @@ export const LEARNING_TOPICS: Topic[] = [
     definition: 'Internal Fragmentation is wasted memory inside an allocated partition. External Fragmentation is total free memory distributed across isolated non-contiguous holes.',
     formula: 'External Frag Failure: Total Free >= Process Requirement AND Largest Hole < Process Requirement',
     example: 'Total Free RAM = 450 KB (Hole 1: 250 KB, Hole 2: 200 KB). Process P5 (300 KB) fails due to external fragmentation.',
-    advantages: ['Understanding fragmentation drives modern OS paging design.'],
+    advantages: ['Understanding fragmentation drives modern memory compaction and allocation design.'],
     disadvantages: ['External fragmentation forces memory compaction.']
   },
   {
