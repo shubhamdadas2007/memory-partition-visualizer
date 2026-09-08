@@ -276,6 +276,27 @@ export const ComparisonPanel: React.FC<ComparisonPanelProps> = ({
     return results;
   }, [scenarioDef]);
 
+  if (scheme === 'fixed-equal') {
+    return (
+      <div className="bg-slate-900/90 border border-amber-500/40 rounded-2xl p-6 shadow-xl backdrop-blur-md">
+        <div className="flex items-start gap-4">
+          <AlertCircle className="w-8 h-8 text-amber-400 shrink-0 mt-0.5" />
+          <div className="flex flex-col gap-2">
+            <h3 className="text-base font-bold text-amber-400">
+              4-Algorithm Benchmark is available only for Dynamic Partitioning.
+            </h3>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Fixed partitions have predetermined boundaries and do not use dynamic hole-fitting algorithms such as First Fit, Best Fit, Worst Fit, or Next Fit.
+            </p>
+            <div className="bg-slate-950/80 border border-amber-500/20 rounded-xl p-3 text-xs text-slate-300">
+              🎓 <strong>Academic Principle:</strong> In <em>Fixed Partition Allocation</em>, memory is divided into static, predetermined partitions (e.g. 8 × 128 KB) at system boot. Incoming processes occupy an entire partition without splitting, generating internal fragmentation. Dynamic hole placement algorithms apply exclusively to Dynamic Partitioning.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col gap-4">

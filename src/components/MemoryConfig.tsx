@@ -78,22 +78,37 @@ export const MemoryConfig: React.FC<MemoryConfigProps> = ({
         </p>
       </div>
 
-      <!-- Placement Algorithm Selection -->
-      <div>
-        <label className="block text-xs font-semibold text-slate-400 mb-1">
-          Placement Fit Algorithm:
-        </label>
-        <select
-          value={algorithm}
-          onChange={(e) => onConfigChange(scheme, e.target.value as FitAlgorithm)}
-          className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-100 focus:outline-none focus:border-cyan-400"
-        >
-          <option value="first">First Fit (Scans from 0 KB)</option>
-          <option value="best">Best Fit (Minimizes residual waste)</option>
-          <option value="worst">Worst Fit (Maximizes remaining hole)</option>
-          <option value="next">Next Fit (Rotational cursor pointer)</option>
-        </select>
-      </div>
+      {/* Placement Algorithm Selection */}
+      {scheme === 'fixed-equal' ? (
+        <div>
+          <label className="block text-xs font-semibold text-slate-400 mb-1">
+            Allocation Method:
+          </label>
+          <div className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-cyan-400 flex items-center justify-between">
+            <span>Fixed Partition Allocation</span>
+            <span className="text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-2 py-0.5 rounded-full">PREDETERMINED SLOTS</span>
+          </div>
+          <p className="text-[11px] text-slate-500 mt-1">
+            Processes are assigned to predetermined fixed-size partitions. Partitions are never split.
+          </p>
+        </div>
+      ) : (
+        <div>
+          <label className="block text-xs font-semibold text-slate-400 mb-1">
+            Placement Fit Algorithm:
+          </label>
+          <select
+            value={algorithm}
+            onChange={(e) => onConfigChange(scheme, e.target.value as FitAlgorithm)}
+            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-100 focus:outline-none focus:border-cyan-400"
+          >
+            <option value="first">First Fit (Scans from 0 KB)</option>
+            <option value="best">Best Fit (Minimizes residual waste)</option>
+            <option value="worst">Worst Fit (Maximizes remaining hole)</option>
+            <option value="next">Next Fit (Rotational cursor pointer)</option>
+          </select>
+        </div>
+      )}
 
       <!-- Memory Action Buttons -->
       <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">

@@ -242,9 +242,15 @@ export const App: React.FC = () => {
               </div>
 
               <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-1 shadow-lg">
-                <span className="text-[10px] font-mono font-bold text-slate-400 uppercase">External Frag</span>
-                <span className="text-xl font-extrabold text-amber-400">{metrics.externalFrag} KB</span>
-                <span className="text-[10px] text-slate-500">{metrics.freeHolesCount} Free Holes</span>
+                <span className="text-[10px] font-mono font-bold text-slate-400 uppercase">
+                  {scheme === 'fixed-equal' ? 'Unused Capacity' : 'External Frag'}
+                </span>
+                <span className="text-xl font-extrabold text-amber-400">
+                  {scheme === 'fixed-equal' ? metrics.freeRam : metrics.externalFrag} KB
+                </span>
+                <span className="text-[10px] text-slate-500">
+                  {scheme === 'fixed-equal' ? `${metrics.freeHolesCount} Unused 128 KB Partitions` : `${metrics.freeHolesCount} Free Holes`}
+                </span>
               </div>
 
               <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-1 shadow-lg">

@@ -564,7 +564,8 @@
       const utilizationPct = availableRam > 0 ? Math.round((usedRam / availableRam) * 100) : 0;
       const largestFreeBlock = freeHoles.length > 0 ? Math.max(...freeHoles) : 0;
       const freeHolesCount = freeHoles.length;
-      const externalFrag = freeHolesCount > 1 ? freeRam : (state.scheme !== 'dynamic' ? freeRam : 0);
+      const externalFrag = state.scheme === 'dynamic' ? (freeHolesCount > 1 ? freeRam : 0) : 0;
+      const unusedCapacity = state.scheme === 'fixed-equal' ? freeRam : 0;
       
       const avgSearchSteps = state.totalRequested > 0 ? parseFloat((state.searchStepsCount / state.totalRequested).toFixed(1)) : 1.0;
 
@@ -577,6 +578,7 @@
         utilizationPct,
         internalFrag,
         externalFrag,
+        unusedCapacity,
         largestFreeBlock,
         freeHolesCount,
         succeeded: state.succeeded,
@@ -592,6 +594,56 @@
       state.benchmarkStale = true;
       const name = processName || processId;
 
+      // --- ISOLATED FIXED EQUAL PARTITIONING ALLOCATION BRANCH ---
+      if (state.scheme === 'fixed-equal') {
+        state.searchStepsCount += 1;
+
+        if (reqSize <= 0) {
+          state.failed++;
+          state.logs.push(`[FAILED] Invalid process size (${reqSize} KB).`);
+          renderApp();
+          return false;
+        }
+
+        // A. Reject oversized processes > 128 KB
+        if (reqSize > 128) {
+          state.failed++;
+          state.logs.push(`[FIXED REJECT] Process ${processId} (${reqSize} KB) exceeds maximum fixed partition size of 128 KB.`);
+          state.logs.push(`  └─ Maximum allowed partition size: 128 KB. Process rejected.`);
+          renderApp();
+          return false;
+        }
+
+        // B. Find first free USER partition (Partition 0 is reserved for OS Kernel)
+        const freePartition = state.blocks.find(b => b.status === 'free');
+        if (!freePartition) {
+          state.failed++;
+          state.logs.push(`[FIXED REJECT] All 7 user partitions are occupied. Process cannot be allocated.`);
+          renderApp();
+          return false;
+        }
+
+        // C. Allocate complete 128 KB partition (never split)
+        const internalFrag = 128 - reqSize;
+        freePartition.status = 'allocated';
+        freePartition.processId = processId;
+        freePartition.processName = name;
+        freePartition.reqSize = reqSize;
+        freePartition.internalFrag = internalFrag;
+        freePartition.size = 128;
+
+        state.succeeded++;
+        state.processes.push({ id: processId, name, reqSize, status: 'allocated', internalFrag });
+        state.logs.push(`[FIXED ALLOCATION] Process ${processId} (${reqSize} KB) → ${freePartition.partitionId || 'Partition'} (${freePartition.size} KB)`);
+        state.logs.push(`  └─ Partition Size: 128 KB | Process Used: ${reqSize} KB | Internal Fragmentation: ${internalFrag} KB`);
+        state.lastAllocationFailedExtFrag = false;
+        state.lastFailedDetails = null;
+
+        renderApp();
+        return true;
+      }
+
+      // --- EXISTING DYNAMIC PARTITIONING (100% UNCHANGED) ---
       if (reqSize <= 0 || reqSize > (state.totalMemory - state.osSize)) {
         state.failed++;
         state.searchStepsCount += 1;
@@ -868,9 +920,11 @@
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       const activeBtn = document.getElementById(`tab-btn-${tabName}`);
       if (activeBtn) activeBtn.classList.add('active');
-      if (tabName === 'benchmark' && (!state.benchmarkResults || state.benchmarkStale)) {
-        runBenchmark();
-        return;
+      if (tabName === 'benchmark') {
+        if (state.scheme === 'dynamic' && (!state.benchmarkResults || state.benchmarkStale)) {
+          runBenchmark();
+          return;
+        }
       }
       renderApp();
     }
@@ -1270,6 +1324,10 @@
 
     // --- CENTRAL BENCHMARK TRIGGER WITH VISUAL FEEDBACK ---
     function runBenchmark(scenarioKey) {
+      if (state.scheme === 'fixed-equal') {
+        renderApp();
+        return;
+      }
       if (scenarioKey) {
         state.benchmarkScenario = scenarioKey;
       }
@@ -1289,10 +1347,13 @@
 
     function runBenchmarkFromHeader() {
       switchTab('benchmark');
-      runBenchmark();
+      if (state.scheme === 'dynamic') {
+        runBenchmark();
+      }
     }
 
     function runBenchmarkWithSimulatorWorkload() {
+      if (state.scheme === 'fixed-equal') return;
       switchTab('benchmark');
       runBenchmark('current-workload');
     }
@@ -1364,19 +1425,19 @@
               <span class="metric-sub">${state.scheme === 'dynamic' ? '0 KB (Dynamic Mode)' : 'Fixed Mode Wasted Space'}</span>
             </div>
             <div class="metric-box">
-              <span class="metric-label">External Fragmentation</span>
-              <span class="metric-val" style="color: var(--accent-amber);">${metrics.externalFrag} KB</span>
-              <span class="metric-sub">${metrics.freeHolesCount} Scattered Free Holes</span>
+              <span class="metric-label">${state.scheme === 'fixed-equal' ? 'Unused Partition Capacity' : 'External Fragmentation'}</span>
+              <span class="metric-val" style="color: var(--accent-amber);">${state.scheme === 'fixed-equal' ? metrics.unusedCapacity : metrics.externalFrag} KB</span>
+              <span class="metric-sub">${state.scheme === 'fixed-equal' ? `${metrics.freeHolesCount} Unused 128 KB Partitions` : `${metrics.freeHolesCount} Scattered Free Holes`}</span>
             </div>
             <div class="metric-box">
               <span class="metric-label">Largest Contiguous Hole</span>
               <span class="metric-val" style="color: var(--accent-emerald);">${metrics.largestFreeBlock} KB</span>
-              <span class="metric-sub">Max Single Process Limit</span>
+              <span class="metric-sub">${state.scheme === 'fixed-equal' ? 'Fixed Partition Slot Limit' : 'Max Single Process Limit'}</span>
             </div>
             <div class="metric-box">
               <span class="metric-label">Avg Search Cost</span>
               <span class="metric-val" style="color: var(--primary-indigo);">${metrics.avgSearchSteps}</span>
-              <span class="metric-sub">Examined Holes / Alloc</span>
+              <span class="metric-sub">${state.scheme === 'fixed-equal' ? 'Fixed Slot Lookups / Alloc' : 'Examined Holes / Alloc'}</span>
             </div>
           </div>
 
@@ -1399,24 +1460,47 @@
                   </select>
                 </div>
 
-                <div>
-                  <label>Placement Fit Algorithm:</label>
-                  <select onchange="state.algorithm = this.value; renderApp();">
-                    <option value="first" ${state.algorithm === 'first' ? 'selected' : ''}>First Fit (Scans from 0 KB)</option>
-                    <option value="best" ${state.algorithm === 'best' ? 'selected' : ''}>Best Fit (Minimizes residual waste)</option>
-                    <option value="worst" ${state.algorithm === 'worst' ? 'selected' : ''}>Worst Fit (Maximizes remaining hole)</option>
-                    <option value="next" ${state.algorithm === 'next' ? 'selected' : ''}>Next Fit (Rotational pointer cursor)</option>
-                  </select>
-                </div>
+                ${state.scheme === 'fixed-equal' ? `
+                  <div>
+                    <label>Allocation Method:</label>
+                    <div style="background-color: #020617; border: 1px solid #334155; border-radius: 10px; padding: 10px 12px; font-size: 12px; font-weight: 700; color: var(--primary-cyan); font-family: 'Fira Code', monospace; display: flex; align-items: center; justify-content: space-between;">
+                      <span>Fixed Partition Allocation</span>
+                      <span class="badge-tag" style="font-size: 9px;">PREDETERMINED SLOTS</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">
+                      Processes are assigned to predetermined fixed-size partitions. Partitions are never split.
+                    </div>
+                  </div>
+                ` : `
+                  <div>
+                    <label>Placement Fit Algorithm:</label>
+                    <select onchange="state.algorithm = this.value; renderApp();">
+                      <option value="first" ${state.algorithm === 'first' ? 'selected' : ''}>First Fit (Scans from 0 KB)</option>
+                      <option value="best" ${state.algorithm === 'best' ? 'selected' : ''}>Best Fit (Minimizes residual waste)</option>
+                      <option value="worst" ${state.algorithm === 'worst' ? 'selected' : ''}>Worst Fit (Maximizes remaining hole)</option>
+                      <option value="next" ${state.algorithm === 'next' ? 'selected' : ''}>Next Fit (Rotational pointer cursor)</option>
+                    </select>
+                  </div>
+                `}
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                  <button class="btn btn-accent" onclick="compactMemory()">Compact RAM</button>
+                  ${state.scheme === 'fixed-equal' ? `
+                    <button class="btn" disabled style="opacity: 0.35; cursor: not-allowed;" title="Compaction is not applicable to Fixed Partitioning (partitions are predetermined and never moved)">Compact RAM (N/A)</button>
+                  ` : `
+                    <button class="btn btn-accent" onclick="compactMemory()">Compact RAM</button>
+                  `}
                   <button class="btn" onclick="resetState()">Reset State</button>
                 </div>
 
-                <button class="btn btn-cyan" onclick="runBenchmarkWithSimulatorWorkload()" style="justify-content: center; padding: 10px; margin-top: 4px;">
-                  ⚡ Benchmark 4 Algos on This Workload
-                </button>
+                ${state.scheme === 'fixed-equal' ? `
+                  <button class="btn" disabled style="justify-content: center; padding: 10px; margin-top: 4px; opacity: 0.35; cursor: not-allowed;" title="4-Algorithm Benchmark is available only for Dynamic Partitioning">
+                    ⚡ 4-Algo Benchmark (Dynamic Only)
+                  </button>
+                ` : `
+                  <button class="btn btn-cyan" onclick="runBenchmarkWithSimulatorWorkload()" style="justify-content: center; padding: 10px; margin-top: 4px;">
+                    ⚡ Benchmark 4 Algos on This Workload
+                  </button>
+                `}
               </div>
 
               <!-- 2. Process Creator Card -->
@@ -1434,7 +1518,7 @@
                     </div>
                     <div>
                       <label>Req Size (KB):</label>
-                      <input name="size" type="number" defaultValue="150" min="1" max="896" placeholder="Size (KB)" required />
+                      <input name="size" type="number" defaultValue="${state.scheme === 'fixed-equal' ? '100' : '150'}" min="1" max="${state.scheme === 'fixed-equal' ? 128 : 896}" placeholder="${state.scheme === 'fixed-equal' ? 'Size (KB) — Max 128' : 'Size (KB)'}" required />
                     </div>
                   </div>
                   <button type="submit" class="btn btn-cyan" style="justify-content: center; padding: 10px;">+ Allocate Process Block</button>
@@ -1576,6 +1660,36 @@
       // VIEW B: 4-ALGORITHM BENCHMARK ARENA
       // ===================================
       else if (state.activeTab === 'benchmark') {
+        if (state.scheme === 'fixed-equal') {
+          viewport.innerHTML = `
+            <div class="card" style="border: 1px solid rgba(245, 158, 11, 0.5); background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(45, 26, 3, 0.6));">
+              <div style="display: flex; align-items: flex-start; gap: 16px; padding: 16px;">
+                <div style="font-size: 40px; line-height: 1;">⚠️</div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <div style="font-size: 16px; font-weight: 800; color: var(--accent-amber);">
+                    4-Algorithm Benchmark is available only for Dynamic Partitioning.
+                  </div>
+                  <p style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
+                    Fixed partitions have predetermined boundaries and do not use dynamic hole-fitting algorithms such as First Fit, Best Fit, Worst Fit, or Next Fit.
+                  </p>
+                  <div class="academic-note" style="border-color: rgba(245, 158, 11, 0.4); background: rgba(15, 23, 42, 0.8);">
+                    <span>🎓 <strong>Academic Principle:</strong> In <em>Fixed Equal Partitioning</em>, physical memory is partitioned into predetermined fixed-size slots (8 × 128 KB) at system boot. Incoming processes occupy an entire 128 KB partition without splitting, generating internal fragmentation. Dynamic hole placement algorithms (First Fit, Best Fit, Worst Fit, Next Fit) search variable-sized holes and apply exclusively to Dynamic Partitioning.</span>
+                  </div>
+                  <div style="margin-top: 8px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <button class="btn btn-cyan" onclick="state.scheme = 'dynamic'; initMemory(); switchTab('benchmark'); runBenchmark();" style="font-size: 13px; padding: 10px 18px;">
+                      Switch to Dynamic Partitioning & Run Benchmark
+                    </button>
+                    <button class="btn" onclick="switchTab('simulator');">
+                      ← Return to Simulator Arena
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
         if (!state.benchmarkResults) {
           executeBenchmark();
         }
